@@ -14,7 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const where = bairroId ? { bairroId } : {}
     const avisos = await prisma.aviso.findMany({ where: { ...where, createdAt: { gte: start, lte: end } }, orderBy: { createdAt: 'desc' } })
 
-    const conteudo = avisos.map(a => `- [${a.titulo}] ${a.texto}`).join('\n') || 'Sem informes para hoje.'
+    // Tipagem explícita para evitar implicit any em ambientes TypeScript rígidos
+    const conteudo = avisos.map((a: any) => `- [${a.titulo}] ${a.texto}`).join('\n') || 'Sem informes para hoje.'
 
     const boletim = await prisma.boletim.create({ data: { bairroId: bairroId || 0, conteudo, status: 'published' } })
     res.json({ boletim, avisos })
