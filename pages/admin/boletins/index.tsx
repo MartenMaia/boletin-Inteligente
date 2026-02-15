@@ -1,12 +1,16 @@
 import React, { useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/router'
-import { Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
+import { Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Tooltip } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DeleteIcon from '@mui/icons-material/Delete'
 import AdminLayout from '../../../components/AdminLayout'
+import { formatDateShort, formatDateFull } from '../../../utils/date'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 
-export default function BoletinsList(){
+export default function BoletinsList({themeMode, toggleTheme}:{themeMode?:string, toggleTheme?:()=>void}){
   const router = useRouter()
   const { data: boletins } = useSWR('/api/boletins', fetcher)
   const [openId, setOpenId] = useState<string | null>(null)
@@ -18,7 +22,7 @@ export default function BoletinsList(){
   }
 
   return (
-    <AdminLayout>
+    <AdminLayout themeMode={themeMode} toggleTheme={toggleTheme}>
       <Paper sx={{ p:3 }}>
         <Typography variant="h5" sx={{ mb:2 }}>Boletins</Typography>
         <Table>
@@ -36,14 +40,34 @@ export default function BoletinsList(){
             {boletins?.map((b:any)=>(
               <TableRow key={b.id}>
                 <TableCell>{b.nome || b.title}</TableCell>
-                <TableCell>{b.ultimoEnvio? new Date(b.ultimoEnvio).toLocaleString(): '-'}</TableCell>
-                <TableCell>{b.proximoEnvio? new Date(b.proximoEnvio).toLocaleString(): '-'}</TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(b.ultimoEnvio)}>
+                    <span>{formatDateShort(b.ultimoEnvio)}</span>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(b.proximoEnvio)}>
+                    <span>{formatDateShort(b.proximoEnvio)}</span>
+                  </Tooltip>
+                </TableCell>
                 <TableCell>{b.grupoAlvo||b.grupo||'-'}</TableCell>
                 <TableCell>{b.status||'Rascunho'}</TableCell>
                 <TableCell>
-                  <Button size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/revisao`)} sx={{ mr:1 }}>Revisão</Button>
-                  <Button size="small" variant="contained" onClick={()=>router.push(`/admin/boletins/${b.id}/aprovar`)} sx={{ mr:1 }}>Aprovação</Button>
-                  <Button size="small" color="error" onClick={()=>setOpenId(b.id)}>Delete</Button>
+                  <Tooltip title="Revisão">
+                    <IconButton size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/revisao`)}>
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Aprovação">
+                    <IconButton size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/aprovar`)}>
+                      <CheckCircleIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Excluir">
+                    <IconButton size="small" color="error" onClick={()=>setOpenId(b.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
                 </TableCell>
               </TableRow>
             ))}
