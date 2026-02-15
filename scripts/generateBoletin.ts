@@ -9,7 +9,8 @@ async function main(){
 
   for(const b of bairros){
     const avisos = await prisma.aviso.findMany({ where: { bairroId: b.id, createdAt: { gte: start, lte: end } } })
-    const conteudo = avisos.map(a=>`- [${a.titulo}] ${a.texto}`).join('\n') || 'Sem informes para hoje.'
+    // Tipagem explícita para evitar implicit any durante build TypeScript
+    const conteudo = avisos.map((a: any) => `- [${a.titulo}] ${a.texto}`).join('\n') || 'Sem informes para hoje.'
     await prisma.boletim.create({ data: { bairroId: b.id, conteudo, status: 'published' } })
     console.log('Boletim gerado para', b.name)
   }
