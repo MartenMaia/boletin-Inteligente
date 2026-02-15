@@ -1,0 +1,7 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'>
+  <rect width='64' height='64' rx='12' fill='white'/>
+  <g transform='translate(8,8) scale(0.75)'>
+    <circle cx='24' cy='24' r='24' fill='#fff'/>
+    <path d='M12 24c0-1 0-2 .5-3l10 0v6h-5c0 3-3 5-5.5 5-4 0-7-3-7-7s3-7 7-7c2 0 3 .8 4 1.5l3-3.5C20 10 18 9 15 9 9 9 5 13 5 19s4 10 10 10 10-4 10-10v-1H12z' fill='#EA4335'/>
+  </g>
+</svg>

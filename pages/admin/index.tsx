@@ -1,6 +1,10 @@
 import React, { useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { Container, Typography, Box, Button } from '@mui/material'
+import { Container, Typography, Box, Button, Grid, Paper, List, ListItemButton, ListItemIcon, ListItemText } from '@mui/material'
+import HomeIcon from '@mui/icons-material/Home'
+import ArticleIcon from '@mui/icons-material/Article'
+import PeopleIcon from '@mui/icons-material/People'
+import SettingsIcon from '@mui/icons-material/Settings'
 
 export default function AdminHome(){
   const router = useRouter()
@@ -17,12 +21,45 @@ export default function AdminHome(){
 
   return (
     <Container maxWidth="lg" sx={{ py: 6 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Typography variant="h4">Área do Administrador</Typography>
-        <Button variant="outlined" onClick={handleLogout}>Logout</Button>
-      </Box>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={3}>
+          <Paper sx={{ p:2, backgroundColor: '#00AEEF', color: 'white' }} elevation={3}>
+            <Typography variant="h6" sx={{ fontWeight: 700, mb:2 }}>Painel</Typography>
+            <List>
+              <ListItemButton sx={{ color: 'white' }} onClick={()=>router.push('/admin')}>
+                <ListItemIcon sx={{ color: 'white' }}><HomeIcon /></ListItemIcon>
+                <ListItemText primary="Visão Geral" />
+              </ListItemButton>
 
-      <Typography>Bem-vindo ao painel administrativo (MVP).</Typography>
+              <ListItemButton sx={{ color: 'white' }} onClick={()=>router.push('/admin/boletins')}>
+                <ListItemIcon sx={{ color: 'white' }}><ArticleIcon /></ListItemIcon>
+                <ListItemText primary="Boletins" />
+              </ListItemButton>
+
+              <ListItemButton sx={{ color: 'white' }} onClick={()=>router.push('/admin/bairros')}>
+                <ListItemIcon sx={{ color: 'white' }}><PeopleIcon /></ListItemIcon>
+                <ListItemText primary="Bairros" />
+              </ListItemButton>
+
+              <ListItemButton sx={{ color: 'white' }} onClick={()=>router.push('/admin/settings')}>
+                <ListItemIcon sx={{ color: 'white' }}><SettingsIcon /></ListItemIcon>
+                <ListItemText primary="Configurações" />
+              </ListItemButton>
+            </List>
+
+            <Box sx={{ mt:4 }}>
+              <Button variant="outlined" onClick={handleLogout} sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.6)' }}>Logout</Button>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={9}>
+          <Paper sx={{ p:3 }} elevation={1}>
+            <Typography variant="h5" sx={{ mb:2 }}>Visão Geral</Typography>
+            <Typography>Bem-vindo ao painel administrativo (MVP). Use o menu à esquerda para navegar.</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
     </Container>
   )
 }
