@@ -1,7 +1,3 @@
-import React from 'react'
-import useSWR from 'swr'
-import { useRouter } from 'next/router'
-import { Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Button } from '@mui/material'
 import React, { useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/router'
