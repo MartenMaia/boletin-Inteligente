@@ -1,7 +1,7 @@
 import React from 'react'
 import { useRouter } from 'next/router'
 import useSWR from 'swr'
-import AdminLayout from '../../../../../components/AdminLayout'
+import AdminLayout from '../../../../components/AdminLayout'
 import { Paper, Typography, Box, Button } from '@mui/material'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
