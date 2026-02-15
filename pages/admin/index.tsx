@@ -3,6 +3,11 @@ import useSWR from 'swr'
 import { useRouter } from 'next/router'
 import { Container, Typography, Box, Button, Grid, Paper, List, ListItemButton, ListItemIcon, ListItemText, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material'
 import AdminLayout from '../../components/AdminLayout'
+import { formatDateShort, formatDateFull } from '../../utils/date'
+import EditIcon from '@mui/icons-material/Edit'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import Tooltip from '@mui/material/Tooltip'
+import IconButton from '@mui/material/IconButton'
 import HomeIcon from '@mui/icons-material/Home'
 import ArticleIcon from '@mui/icons-material/Article'
 import PeopleIcon from '@mui/icons-material/People'
@@ -46,13 +51,17 @@ export default function AdminHome(){
             {boletins?.filter((b:any)=>b.configurado !== false).map((b:any)=> (
               <TableRow key={b.id}>
                 <TableCell>{b.nome || b.title || `Boletim ${b.id}`}</TableCell>
-                <TableCell>{b.ultimoEnvio ? new Date(b.ultimoEnvio).toLocaleString() : '-'}</TableCell>
-                <TableCell>{b.proximoEnvio ? new Date(b.proximoEnvio).toLocaleString() : '-'}</TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(b.ultimoEnvio)}><span>{formatDateShort(b.ultimoEnvio)}</span></Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(b.proximoEnvio)}><span>{formatDateShort(b.proximoEnvio)}</span></Tooltip>
+                </TableCell>
                 <TableCell>{b.grupoAlvo || b.grupo || '-'}</TableCell>
                 <TableCell>{b.status || 'Rascunho'}</TableCell>
                 <TableCell>
-                  <Button size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/revisao`)} sx={{ mr:1 }}>Revisão</Button>
-                  <Button size="small" variant="contained" onClick={()=>router.push(`/admin/boletins/${b.id}/aprovar`)}>Aprovação</Button>
+                  <Tooltip title="Revisão"><IconButton size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/revisao`)}><EditIcon /></IconButton></Tooltip>
+                  <Tooltip title="Aprovação"><IconButton size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/aprovar`)}><CheckCircleIcon /></IconButton></Tooltip>
                 </TableCell>
               </TableRow>
             ))}
