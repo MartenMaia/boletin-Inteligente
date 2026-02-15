@@ -1,6 +1,7 @@
 import React from 'react'
 import useSWR from 'swr'
 import { Container, Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText } from '@mui/material'
+import AdminLayout from '../../components/AdminLayout'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 
