@@ -34,7 +34,7 @@ export default function AdminLogin(){
           <Grid item xs={12} md={6} sx={{ backgroundColor: '#00AEEF', position: 'relative', minHeight: 520 }}>
             {/* Left illustration area - you can replace with project image */}
             <Box sx={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <Image src="/images/login-illustration.png" alt="illustration" width={520} height={360} />
+              <Image src="/images/report-illustration.png" alt="illustration" width={520} height={360} />
             </Box>
           </Grid>
 
@@ -59,14 +59,7 @@ export default function AdminLogin(){
                   <Typography variant="body2">Não Tem Uma Conta? <MuiLink component={Link} href="#">Inscrever-se</MuiLink></Typography>
                 </Box>
 
-                <Box sx={{ textAlign: 'center', mt: 3 }}>
-                  <Typography variant="subtitle1">Logar Com</Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2 }}>
-                    <Image src="/images/social-facebook.png" alt="facebook" width={32} height={32} />
-                    <Image src="/images/social-google.png" alt="google" width={32} height={32} />
-                    <Image src="/images/social-apple.png" alt="apple" width={32} height={32} />
-                  </Box>
-                </Box>
+                {/* removed social login block as requested */}
               </Box>
             </Box>
           </Grid>
