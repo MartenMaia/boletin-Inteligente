@@ -1,17 +1,26 @@
 import { createTheme } from '@mui/material/styles'
 
-const theme = createTheme({
+export const darkTheme = createTheme({
   palette: {
-    primary: {
-      main: '#49708a'
-    },
-    secondary: {
-      main: '#88abc2'
-    },
-    background: {
-      default: '#ebf7f8'
+    mode: 'dark',
+    primary: { main: '#90caf9' },
+    background: { default: '#0f1720', paper: '#0b1220' },
+    divider: 'rgba(255,255,255,0.08)'
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: { borderRadius: 8 }
+      }
     }
   }
 })
 
-export default theme
+export const lightTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: { main: '#1976d2' }
+  }
+})
+
+export default { darkTheme, lightTheme }

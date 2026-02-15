@@ -1,12 +1,14 @@
 import React, { ReactNode } from 'react'
-import { Container, Grid, Paper, Typography, Box, List, ListItemButton, ListItemIcon, ListItemText, Button } from '@mui/material'
+import { Container, Grid, Paper, Typography, Box, List, ListItemButton, ListItemIcon, ListItemText, Button, AppBar, Toolbar, IconButton } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
 import ArticleIcon from '@mui/icons-material/Article'
 import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
+import Brightness4Icon from '@mui/icons-material/Brightness4'
+import Brightness7Icon from '@mui/icons-material/Brightness7'
 import { useRouter } from 'next/router'
 
-export default function AdminLayout({children}:{children:ReactNode}){
+export default function AdminLayout({children, themeMode, toggleTheme}:{children:ReactNode, themeMode?: string, toggleTheme?: ()=>void}){
   const router = useRouter()
   const handleLogout = ()=>{
     try{ localStorage.removeItem('bi_admin'); sessionStorage.removeItem('bi_admin') }catch(e){}
@@ -14,7 +16,16 @@ export default function AdminLayout({children}:{children:ReactNode}){
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 6 }}>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      <AppBar position="static" color="transparent" elevation={0} sx={{ mb:2 }}>
+        <Toolbar sx={{ px:0 }}>
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>Boletim Inteligente</Typography>
+          <IconButton onClick={toggleTheme} color="inherit" aria-label="toggle theme">
+            {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          </IconButton>
+        </Toolbar>
+      </AppBar>
+
       <Grid container spacing={3}>
         <Grid item xs={12} md={3}>
           <Paper sx={{ p:2, backgroundColor: '#00AEEF', color: 'white', position: 'sticky', top: 24 }} elevation={3}>
