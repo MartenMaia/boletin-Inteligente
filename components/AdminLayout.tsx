@@ -57,11 +57,10 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
               </ListItemButton>
             </List>
 
-            <Box sx={{ mt:4 }}>
+              <Box sx={{ mt:4 }}>
               <Button variant="outlined" onClick={handleLogout} sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.6)' }}>Logout</Button>
             </Box>
           </Paper>
-        </Paper>
         </Box>
 
         <Box component="main" sx={{ flex: 1, ml: '260px', p:3 }}>
