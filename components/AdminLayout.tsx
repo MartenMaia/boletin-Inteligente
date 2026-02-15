@@ -21,7 +21,7 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
   const toggle = toggleTheme || themeCtx?.toggle
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <div>
       <AppBar position="static" color="transparent" elevation={0} sx={{ mb:2 }}>
         <Toolbar sx={{ px:0 }}>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>Boletim Inteligente</Typography>
@@ -31,9 +31,9 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
         </Toolbar>
       </AppBar>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={3}>
-          <Paper sx={{ p:2, backgroundColor: '#00AEEF', color: 'white', position: 'sticky', top: 24 }} elevation={3}>
+      <Box sx={{ display: 'flex' }}>
+        <Box component="aside" sx={{ width: 260, height: '100vh', position: 'fixed', left:0, top:0, pt:8, px:2, backgroundColor: (theme)=>theme.palette.mode==='dark'? '#0b1220' : '#fff', boxShadow: 3, overflowY: 'auto' }}>
+          <Paper sx={{ p:2, backgroundColor: '#00AEEF', color: 'white' }} elevation={3}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb:2 }}>Painel</Typography>
             <List>
               <ListItemButton sx={{ color: 'white' }} selected={router.pathname === '/admin'} onClick={()=>router.push('/admin')}>
@@ -61,12 +61,13 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
               <Button variant="outlined" onClick={handleLogout} sx={{ color: 'white', borderColor: 'rgba(255,255,255,0.6)' }}>Logout</Button>
             </Box>
           </Paper>
-        </Grid>
+        </Paper>
+        </Box>
 
-        <Grid item xs={12} md={9}>
+        <Box component="main" sx={{ flex: 1, ml: '260px', p:3 }}>
           {children}
-        </Grid>
-      </Grid>
-    </Container>
+        </Box>
+      </Box>
+    </div>
   )
 }
