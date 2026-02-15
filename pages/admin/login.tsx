@@ -1,9 +1,32 @@
-import React from 'react'
-import { Container, Grid, Paper, Box, Typography, TextField, Button, Checkbox, FormControlLabel, Link as MuiLink } from '@mui/material'
+import React, { useState } from 'react'
+import { useRouter } from 'next/router'
+import { Container, Grid, Paper, Box, Typography, TextField, Button, Checkbox, FormControlLabel, Link as MuiLink, Alert } from '@mui/material'
 import Image from 'next/image'
 import Link from 'next/link'
 
 export default function AdminLogin(){
+  const router = useRouter()
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault()
+    setError('')
+    // simple hardcoded auth for MVP
+    if(username === 'admin' && password === 'admin'){
+      // store a simple flag and redirect
+      try{
+        if(remember) localStorage.setItem('bi_admin', '1')
+        else sessionStorage.setItem('bi_admin', '1')
+      }catch(e){/* ignore */}
+      router.push('/admin')
+    }else{
+      setError('Credenciais inválidas. Use admin / admin para teste.')
+    }
+  }
+
   return (
     <Container maxWidth="lg" sx={{ height: '100vh', display: 'flex', alignItems: 'center' }}>
       <Paper elevation={6} sx={{ width: '100%', overflow: 'hidden' }}>
@@ -19,16 +42,18 @@ export default function AdminLogin(){
             <Box sx={{ maxWidth: 360, mx: 'auto' }}>
               <Typography variant="h4" align="center" gutterBottom sx={{ fontWeight: 700 }}>LOGIN</Typography>
 
-              <Box component="form" noValidate>
-                <TextField fullWidth label="Username" margin="normal" placeholder="@mail.com" />
-                <TextField fullWidth label="Password" margin="normal" type="password" placeholder="password" />
+              {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+              <Box component="form" noValidate onSubmit={handleSubmit}>
+                <TextField value={username} onChange={(e)=>setUsername(e.target.value)} fullWidth label="Username" margin="normal" placeholder="@mail.com" />
+                <TextField value={password} onChange={(e)=>setPassword(e.target.value)} fullWidth label="Password" margin="normal" type="password" placeholder="password" />
 
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
-                  <FormControlLabel control={<Checkbox />} label="Remember me" />
+                  <FormControlLabel control={<Checkbox checked={remember} onChange={(e)=>setRemember(e.target.checked)} />} label="Remember me" />
                   <MuiLink component={Link} href="#">Esqueceu a Senha?</MuiLink>
                 </Box>
 
-                <Button fullWidth variant="contained" color="primary" sx={{ mt: 2, py: 1.2 }}>Entrar</Button>
+                <Button fullWidth type="submit" variant="contained" color="primary" sx={{ mt: 2, py: 1.2 }}>Entrar</Button>
 
                 <Box sx={{ textAlign: 'center', mt: 2 }}>
                   <Typography variant="body2">Não Tem Uma Conta? <MuiLink component={Link} href="#">Inscrever-se</MuiLink></Typography>
