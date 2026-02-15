@@ -2,6 +2,10 @@ import React from 'react'
 import useSWR from 'swr'
 import { useRouter } from 'next/router'
 import { Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Button } from '@mui/material'
+import React, { useState } from 'react'
+import useSWR, { mutate } from 'swr'
+import { useRouter } from 'next/router'
+import { Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material'
 import AdminLayout from '../../../components/AdminLayout'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
@@ -9,6 +13,13 @@ const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 export default function BoletinsList(){
   const router = useRouter()
   const { data: boletins } = useSWR('/api/boletins', fetcher)
+  const [openId, setOpenId] = useState<string | null>(null)
+
+  const handleDelete = async (id:string)=>{
+    await fetch(`/api/boletins/${id}`, { method: 'DELETE' })
+    mutate('/api/boletins')
+    setOpenId(null)
+  }
 
   return (
     <AdminLayout>
@@ -35,12 +46,25 @@ export default function BoletinsList(){
                 <TableCell>{b.status||'Rascunho'}</TableCell>
                 <TableCell>
                   <Button size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/revisao`)} sx={{ mr:1 }}>Revisão</Button>
-                  <Button size="small" variant="contained" onClick={()=>router.push(`/admin/boletins/${b.id}/aprovar`)}>Aprovação</Button>
+                  <Button size="small" variant="contained" onClick={()=>router.push(`/admin/boletins/${b.id}/aprovar`)} sx={{ mr:1 }}>Aprovação</Button>
+                  <Button size="small" color="error" onClick={()=>setOpenId(b.id)}>Delete</Button>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+
+        <Dialog open={!!openId} onClose={()=>setOpenId(null)}>
+          <DialogTitle>Confirmar exclusão</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Tem certeza que deseja excluir este boletim? Esta ação não pode ser desfeita.</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={()=>setOpenId(null)}>Cancelar</Button>
+            <Button color="error" variant="contained" onClick={()=>openId && handleDelete(openId)}>Excluir</Button>
+          </DialogActions>
+        </Dialog>
+
       </Paper>
     </AdminLayout>
   )

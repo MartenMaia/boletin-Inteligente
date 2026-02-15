@@ -5,24 +5,48 @@ import { Container, Grid, Paper, Typography, Box, TextField, Button, List, ListI
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 
 export default function Grupos(){
-  const { data: grupos } = useSWR('/api/grupos', fetcher)
-  const { data: individuos } = useSWR('/api/individuos', fetcher)
+  const { data: grupos, mutate: mutateGrupos } = useSWR('/api/grupos', fetcher)
+  const { data: individuos, mutate: mutateIndividuos } = useSWR('/api/individuos', fetcher)
+  const [newName, setNewName] = React.useState('')
+  const [selectedGroup, setSelectedGroup] = React.useState<string | null>(null)
+  const [newIndNome, setNewIndNome] = React.useState('')
+  const [newIndEmail, setNewIndEmail] = React.useState('')
+
+  const createGroup = async ()=>{
+    if(!newName) return
+    await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: newName }), headers: { 'Content-Type': 'application/json' } })
+    setNewName('')
+    mutateGrupos()
+  }
+
+  const addIndividuo = async ()=>{
+    if(!newIndNome) return
+    await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome: newIndNome, email: newIndEmail, grupo: selectedGroup }), headers: { 'Content-Type': 'application/json' } })
+    setNewIndNome(''); setNewIndEmail('')
+    mutateIndividuos(); mutateGrupos()
+  }
+
+  const toggleMember = async (groupId:string, individuoId:string)=>{
+    await fetch(`/api/grupos/${groupId}`, { method: 'PATCH', body: JSON.stringify({ toggleMember: individuoId }), headers: { 'Content-Type': 'application/json' } })
+    mutateGrupos(); mutateIndividuos()
+  }
 
   return (
+    <AdminLayout>
     <Container maxWidth="lg" sx={{ py: 6 }}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p:3 }} elevation={1}>
             <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
-            <Box component="form" sx={{ display: 'flex', gap:2 }}>
-              <TextField placeholder="Nome do grupo" fullWidth />
-              <Button variant="contained">Salvar</Button>
+            <Box component="form" sx={{ display: 'flex', gap:2, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); createGroup() }}>
+              <TextField placeholder="Nome do grupo" fullWidth value={newName} onChange={(e)=>setNewName(e.target.value)} />
+              <Button variant="contained" onClick={createGroup}>Salvar</Button>
             </Box>
 
             <Box sx={{ mt:3 }}>
               <List>
                 {grupos?.map((g:any)=> (
-                  <ListItem key={g.id}>
+                  <ListItem key={g.id} selected={selectedGroup===g.id} onClick={()=>setSelectedGroup(g.id)} button>
                     <ListItemText primary={g.name} secondary={`${g.membros?.length || 0} membros`} />
                   </ListItem>
                 ))}
@@ -34,10 +58,17 @@ export default function Grupos(){
         <Grid item xs={12} md={6}>
           <Paper sx={{ p:3 }} elevation={1}>
             <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
+            <Box sx={{ display:'flex', gap:2, mb:2 }}>
+              <TextField placeholder="Nome" value={newIndNome} onChange={(e)=>setNewIndNome(e.target.value)} />
+              <TextField placeholder="Email" value={newIndEmail} onChange={(e)=>setNewIndEmail(e.target.value)} />
+              <Button variant="contained" onClick={addIndividuo}>Adicionar</Button>
+            </Box>
+
             <List>
               {individuos?.map((i:any)=> (
                 <ListItem key={i.id}>
                   <ListItemText primary={i.nome || i.email} secondary={i.grupo || ''} />
+                  <Button size="small" onClick={()=>selectedGroup && toggleMember(selectedGroup, i.id)}>{selectedGroup && i.grupo===grupos?.find((g:any)=>g.id===selectedGroup)?.name ? 'Remover' : 'Adicionar'}</Button>
                 </ListItem>
               ))}
             </List>
@@ -45,5 +76,6 @@ export default function Grupos(){
         </Grid>
       </Grid>
     </Container>
+    </AdminLayout>
   )
 }

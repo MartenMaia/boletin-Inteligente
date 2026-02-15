@@ -16,6 +16,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse){
     const b = boletins[key]
     if(b){ b.status = 'Aprovado' }
     res.status(200).json({ ok: true })
+  }else if(req.method === 'DELETE'){
+    if(boletins[key]){ delete boletins[key] }
+    res.status(200).json({ ok: true })
   }else{
     res.status(405).end()
   }

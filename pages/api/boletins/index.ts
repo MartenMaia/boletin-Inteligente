@@ -7,5 +7,9 @@ let boletins = [
 ]
 
 export default function handler(req: NextApiRequest, res: NextApiResponse){
-  res.status(200).json(boletins)
+  if(req.method === 'GET'){
+    res.status(200).json(boletins)
+  }else{
+    res.status(405).end()
+  }
 }
