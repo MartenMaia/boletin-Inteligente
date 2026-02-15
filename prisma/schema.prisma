@@ -1,0 +1,55 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int     @id @default(autoincrement())
+  email     String? @unique
+  name      String?
+  role      String  @default("admin")
+}
+
+model Association {
+  id   Int    @id @default(autoincrement())
+  name String
+}
+
+model Bairro {
+  id           Int      @id @default(autoincrement())
+  name         String
+  association  Association? @relation(fields: [associationId], references: [id])
+  associationId Int?
+}
+
+model Cliente {
+  id       Int    @id @default(autoincrement())
+  name     String
+  phone    String
+  bairroId Int
+  bairro   Bairro @relation(fields: [bairroId], references: [id])
+}
+
+model Aviso {
+  id       Int      @id @default(autoincrement())
+  source   String
+  titulo   String
+  texto    String
+  bairroId Int
+  bairro   Bairro   @relation(fields: [bairroId], references: [id])
+  status   String   @default("draft")
+  createdAt DateTime @default(now())
+}
+
+model Boletim {
+  id       Int      @id @default(autoincrement())
+  bairroId Int
+  bairro   Bairro   @relation(fields: [bairroId], references: [id])
+  data     DateTime @default(now())
+  conteudo String
+  status   String   @default("draft")
+}
