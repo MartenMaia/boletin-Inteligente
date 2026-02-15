@@ -15,13 +15,18 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
     router.replace('/admin/login')
   }
 
+  // fallback to ThemeContext if props not provided
+  const themeCtx = require('../context/ThemeContext').useThemeContext ? require('../context/ThemeContext').useThemeContext() : null
+  const currentMode = themeMode || themeCtx?.mode
+  const toggle = toggleTheme || themeCtx?.toggle
+
   return (
     <Container maxWidth="lg" sx={{ py: 3 }}>
       <AppBar position="static" color="transparent" elevation={0} sx={{ mb:2 }}>
         <Toolbar sx={{ px:0 }}>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>Boletim Inteligente</Typography>
-          <IconButton onClick={toggleTheme} color="inherit" aria-label="toggle theme">
-            {themeMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+          <IconButton onClick={toggle} color="inherit" aria-label="toggle theme">
+            {currentMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
           </IconButton>
         </Toolbar>
       </AppBar>

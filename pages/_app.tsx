@@ -5,6 +5,8 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { darkTheme, lightTheme } from '../theme'
 import React from 'react'
 
+import { ThemeContext } from '../context/ThemeContext'
+
 export default function App({ Component, pageProps }: AppProps){
   const [mode, setMode] = React.useState<'dark'|'light'>(() => {
     try{ return (localStorage.getItem('bi_theme') as 'dark'|'light') || 'dark' }catch(e){ return 'dark' }
@@ -19,9 +21,11 @@ export default function App({ Component, pageProps }: AppProps){
   const theme = mode === 'dark' ? darkTheme : lightTheme
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Component {...pageProps} themeMode={mode} toggleTheme={toggle} />
-    </ThemeProvider>
+    <ThemeContext.Provider value={{ mode, toggle }}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Component {...pageProps} />
+      </ThemeProvider>
+    </ThemeContext.Provider>
   )
 }
