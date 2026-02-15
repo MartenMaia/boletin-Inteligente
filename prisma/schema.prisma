@@ -53,3 +53,31 @@ model Boletim {
   conteudo String
   status   String   @default("draft")
 }
+
+model Group {
+  id          Int    @id @default(autoincrement())
+  name        String
+  description String?
+  members     GroupMember[]
+}
+
+model GroupMember {
+  id       Int    @id @default(autoincrement())
+  groupId  Int
+  group    Group  @relation(fields: [groupId], references: [id])
+  name     String
+  contact  String
+  bairroId Int?
+}
+
+model BulletinSettings {
+  id         Int     @id @default(autoincrement())
+  title      String
+  types      String  // JSON stringified array of types
+  sources    String  // JSON stringified array of sources
+  approver   String?
+  frequency  String
+  segmentation String // JSON
+  groupId    Int?
+  group      Group?  @relation(fields: [groupId], references: [id])
+}

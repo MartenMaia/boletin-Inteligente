@@ -7,6 +7,14 @@ async function main(){
   const b2 = await prisma.bairro.create({ data: { name: 'Bairro Beta', associationId: 2 } })
   await prisma.cliente.createMany({ data: [ { name: 'Cliente 1', phone: '+5511999000001', bairroId: b1.id }, { name: 'Cliente 2', phone: '+5511999000002', bairroId: b2.id } ] })
   await prisma.aviso.createMany({ data: [ { source: 'manual', titulo: 'Obra na rua X', texto: 'Obra em andamento na Rua X.', bairroId: b1.id }, { source: 'manual', titulo: 'Evento', texto: 'Evento cultural na praça.', bairroId: b2.id } ] })
+
+  // seed groups
+  const g = await prisma.group.create({ data: { name: 'Moradores Bairro Alfa', description: 'Grupo de moradores do Bairro Alfa' } })
+  await prisma.groupMember.create({ data: { groupId: g.id, name: 'João Silva', contact: '+5511999000111', bairroId: b1.id } })
+
+  // seed bulletin settings example
+  await prisma.bulletinSettings.create({ data: { title: 'Boletim diário padrão', types: JSON.stringify(['Segurança','Movimentação']), sources: JSON.stringify(['manual']), approver: 'Redator', frequency: 'Diário', segmentation: JSON.stringify(['Bairro']), groupId: g.id } })
+
   console.log('Seed completo')
 }
 
