@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from 'next'
 
 import groupsModule from '../grupos'
 
-let grupos = []
+let grupos: any[] = []
 try{ // try to require the module file to keep same in-memory array
   const mod = require('./../grupos')
   grupos = mod.default || mod
