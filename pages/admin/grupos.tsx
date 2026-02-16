@@ -36,9 +36,12 @@ export default function Grupos(){
 
   return (
     <AdminLayout>
-      <Paper sx={{ p:3 }} elevation={1}>
-        <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
+      {/* title outside paper */}
+      <Box sx={{ mb:2 }}>
+        <Typography variant="h6">Configuração de Grupos</Typography>
+      </Box>
 
+      <Paper sx={{ p:3 }} elevation={1}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
             <Paper sx={{ p:3 }} elevation={0}>

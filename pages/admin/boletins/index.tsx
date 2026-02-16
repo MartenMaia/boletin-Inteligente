@@ -55,11 +55,17 @@ export default function BoletinsList({themeMode, toggleTheme}:{themeMode?:string
 
   return (
     <AdminLayout themeMode={themeMode} toggleTheme={toggleTheme}>
+      {/* Page title outside Paper */}
+      <Box sx={{ mb:2 }}>
+        <Typography variant="h5">Boletins</Typography>
+      </Box>
+
       <Paper sx={{ p:3 }}>
         <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
-          <Typography variant="h5">Boletins</Typography>
           <Box>
-            <Button variant="contained" color="primary" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
+            <Box>
+              <Button variant="contained" color="primary" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
+            </Box>
           </Box>
         </Box>
 
