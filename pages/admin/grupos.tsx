@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
-import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Stack } from '@mui/material'
+import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AdminLayout from '../../components/AdminLayout'
 
@@ -12,15 +12,21 @@ export default function Grupos(){
 
   const [tab, setTab] = useState(0)
 
+  // modal states
+  const [openGroupModal, setOpenGroupModal] = useState(false)
+  const [openIndModal, setOpenIndModal] = useState(false)
+
+  // group form
   const [groupName, setGroupName] = useState('')
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
 
+  // individual form
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
   const [local, setLocal] = useState('')
 
   useEffect(()=>{
-    // Seed sample data for simulation if endpoints return empty
+    // seed sample data for simulation if endpoints return empty
     (async ()=>{
       try{
         const ind = await fetch('/api/individuos').then(r=>r.json()).catch(()=>null)
@@ -32,7 +38,6 @@ export default function Grupos(){
           mutate('/api/individuos')
         }
         if((!gr || gr.length===0)){
-          // create a sample group after individuals seeded
           const inds = await fetch('/api/individuos').then(r=>r.json())
           const memberIds = (inds||[]).slice(0,2).map((i:any)=>i.id)
           await fetch('/api/grupos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:'Equipe Centro', membros: memberIds})})
@@ -46,18 +51,20 @@ export default function Grupos(){
     setSelectedMembers(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
   }
 
-  const createGroup = async ()=>{
+  const handleCreateGroup = async ()=>{
     if(!groupName) return
     await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: groupName, membros: selectedMembers }), headers: { 'Content-Type': 'application/json' } })
     setGroupName('')
     setSelectedMembers([])
+    setOpenGroupModal(false)
     mutate('/api/grupos')
   }
 
-  const addIndividuo = async ()=>{
+  const handleCreateInd = async ()=>{
     if(!nome) return
     await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, local }), headers: { 'Content-Type': 'application/json' } })
     setNome(''); setTelefone(''); setLocal('')
+    setOpenIndModal(false)
     mutate('/api/individuos')
   }
 
@@ -75,28 +82,10 @@ export default function Grupos(){
 
         {tab === 0 && (
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ p:3 }} elevation={1}>
-                <Typography variant="h6" sx={{ mb:2 }}>Novo Grupo</Typography>
-
-                <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                  <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
-                  <Button variant="contained" onClick={createGroup}>Salvar</Button>
-                </Box>
-
-                <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
-                <List sx={{ maxHeight:300, overflow:'auto' }}>
-                  {individuos?.map((i:any)=> (
-                    <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
-                      <Checkbox checked={selectedMembers.includes(i.id)} />
-                      <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
+              <Box sx={{ display:'flex', justifyContent:'flex-end', mb:2 }}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={()=>setOpenGroupModal(true)}>Add +</Button>
+              </Box>
               <Paper sx={{ p:3 }} elevation={1}>
                 <Typography variant="h6" sx={{ mb:2 }}>Grupos Cadastrados</Typography>
                 <List>
@@ -113,24 +102,10 @@ export default function Grupos(){
 
         {tab === 1 && (
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Paper sx={{ p:3 }} elevation={1}>
-                <Typography variant="h6" sx={{ mb:2 }}>Novo Indivíduo</Typography>
-
-                <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                  <TextField placeholder="Nome" value={nome} onChange={(e)=>setNome(e.target.value)} />
-                  <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} />
-                  <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} />
-                  <IconButton color="primary" onClick={addIndividuo} aria-label="adicionar">
-                    <AddIcon />
-                  </IconButton>
-                </Box>
-
-                <Typography variant="caption" color="text.secondary">Adicione um novo indivíduo ao cadastro.</Typography>
-              </Paper>
-            </Grid>
-
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
+              <Box sx={{ display:'flex', justifyContent:'flex-end', mb:2 }}>
+                <Button variant="contained" startIcon={<AddIcon />} onClick={()=>setOpenIndModal(true)}>Add +</Button>
+              </Box>
               <Paper sx={{ p:3 }} elevation={1}>
                 <Typography variant="h6" sx={{ mb:2 }}>Indivíduos Cadastrados</Typography>
                 <List sx={{ maxHeight:420, overflow:'auto' }}>
@@ -146,6 +121,48 @@ export default function Grupos(){
         )}
 
       </Paper>
+
+      {/* Group Modal */}
+      <Dialog open={openGroupModal} onClose={()=>setOpenGroupModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Novo Grupo</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display:'flex', gap:2, mt:1, mb:2 }}>
+            <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
+          </Box>
+          <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
+          <List sx={{ maxHeight:300, overflow:'auto' }}>
+            {individuos?.map((i:any)=> (
+              <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
+                <Checkbox checked={selectedMembers.includes(i.id)} />
+                <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
+              </ListItem>
+            ))}
+          </List>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=>setOpenGroupModal(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleCreateGroup}>Salvar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Individual Modal */}
+      <Dialog open={openIndModal} onClose={()=>setOpenIndModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Novo Indivíduo</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display:'flex', gap:2, mt:1, mb:2 }}>
+            <TextField placeholder="Nome" fullWidth value={nome} onChange={(e)=>setNome(e.target.value)} />
+          </Box>
+          <Box sx={{ display:'flex', gap:2, mb:2 }}>
+            <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} sx={{ width:200 }} />
+            <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} sx={{ width:200 }} />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={()=>setOpenIndModal(false)}>Cancelar</Button>
+          <Button variant="contained" onClick={handleCreateInd}>Salvar</Button>
+        </DialogActions>
+      </Dialog>
+
     </AdminLayout>
   )
 }
