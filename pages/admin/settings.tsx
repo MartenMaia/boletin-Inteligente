@@ -1,6 +1,6 @@
 import React from 'react'
 import AdminLayout from '../../components/AdminLayout'
-import { Box, Typography, Tabs, Tab, Paper, Grid, TextField } from '@mui/material'
+import { Box, Typography, Tabs, Tab, Paper, Grid, TextField, Alert } from '@mui/material'
 
 const LS_KEY = 'bi_indicadores_filtros_v1'
 
@@ -9,14 +9,10 @@ type Filters = {
   bairro: string
 }
 
-const cidadesMock = ['Todas', 'São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Curitiba']
-const bairrosMockByCidade: Record<string, string[]> = {
-  'Todas': ['Todos'],
-  'São Paulo': ['Todos', 'Centro', 'Zona Norte', 'Zona Sul', 'Zona Leste', 'Zona Oeste'],
-  'Rio de Janeiro': ['Todos', 'Centro', 'Zona Norte', 'Zona Sul', 'Zona Oeste'],
-  'Belo Horizonte': ['Todos', 'Centro', 'Pampulha', 'Barreiro'],
-  'Curitiba': ['Todos', 'Centro', 'Batel', 'Água Verde']
-}
+type Bairro = { id: number; name: string }
+
+// We will use the project's own bairros source (pages/api/bairros.ts)
+const CIDADE_DEFAULT = 'Florianópolis'
 
 function TabPanel({ value, index, children }:{ value:number, index:number, children:React.ReactNode }){
   if(value !== index) return null
@@ -25,22 +21,52 @@ function TabPanel({ value, index, children }:{ value:number, index:number, child
 
 export default function Settings(){
   const [tab, setTab] = React.useState(0)
+  const [bairros, setBairros] = React.useState<string[]>(['Todos'])
+  const [bairrosLoading, setBairrosLoading] = React.useState(false)
+  const [bairrosError, setBairrosError] = React.useState<string | null>(null)
 
   const [filters, setFilters] = React.useState<Filters>(()=>{
     try{
       const raw = localStorage.getItem(LS_KEY)
       if(raw) return JSON.parse(raw)
     }catch(e){}
-    return { cidade: 'Todas', bairro: 'Todos' }
+    return { cidade: CIDADE_DEFAULT, bairro: 'Todos' }
   })
 
   React.useEffect(()=>{
     try{ localStorage.setItem(LS_KEY, JSON.stringify(filters)) }catch(e){}
   },[filters])
 
-  const bairros = bairrosMockByCidade[filters.cidade] || ['Todos']
+  // Load bairros from backend (DB) and use them as Florianópolis bairros list.
+  React.useEffect(()=>{
+    let mounted = true
+    setBairrosLoading(true)
+    setBairrosError(null)
+    ;(async ()=>{
+      try{
+        const res = await fetch('/api/bairros')
+        if(!res.ok) throw new Error('Falha ao carregar bairros')
+        const data = (await res.json()) as Bairro[]
+        const names = Array.from(new Set((data||[]).map(b=>String(b.name).trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'))
+        if(mounted){
+          setBairros(['Todos', ...names])
+        }
+      }catch(e:any){
+        if(mounted){
+          setBairrosError(e?.message || 'Erro ao carregar bairros')
+          setBairros(['Todos'])
+        }
+      }finally{
+        if(mounted) setBairrosLoading(false)
+      }
+    })()
+    return ()=>{ mounted = false }
+  },[])
+
+  const cidades = [CIDADE_DEFAULT]
 
   const setCidade = (cidade:string)=>{
+    // for now we only support Florianópolis; keep the filter consistent
     setFilters(prev=>({ ...prev, cidade, bairro: 'Todos' }))
   }
 
@@ -69,6 +95,12 @@ export default function Settings(){
               Use os filtros abaixo para definir o recorte (Cidade/Bairro) que será aplicado nas demais abas.
             </Typography>
 
+            {bairrosError && (
+              <Alert severity="warning" sx={{ mb:2 }}>
+                {bairrosError}
+              </Alert>
+            )}
+
             <Grid container spacing={2}>
               <Grid item xs={12} md={4}>
                 <TextField
@@ -79,7 +111,7 @@ export default function Settings(){
                   onChange={(e)=>setCidade(String(e.target.value))}
                   SelectProps={{ native: true }}
                 >
-                  {cidadesMock.map(c=>(
+                  {cidades.map(c=>(
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </TextField>
@@ -93,6 +125,8 @@ export default function Settings(){
                   value={filters.bairro}
                   onChange={(e)=>setBairro(String(e.target.value))}
                   SelectProps={{ native: true }}
+                  disabled={bairrosLoading}
+                  helperText={bairrosLoading ? 'Carregando bairros…' : ' '}
                 >
                   {bairros.map(b=>(
                     <option key={b} value={b}>{b}</option>
