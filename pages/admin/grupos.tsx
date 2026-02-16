@@ -152,7 +152,7 @@ export default function Grupos(){
               <Paper sx={{ p:3 }} elevation={1}>
                 <List sx={{ maxHeight:360, overflow:'auto', px:0, '&::-webkit-scrollbar': { height:8, width:8 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.08)', borderRadius: 8 }, '&::-webkit-scrollbar-track': { background: 'transparent' } }}>
                   {grupos.map((g)=> (
-                    <ListItem key={g.id' } secondaryAction={
+                    <ListItem key={g.id} secondaryAction={
                       <IconButton edge="end" aria-label="editar" onClick={()=>startEditGroup(g)}>
                         <EditIcon />
                       </IconButton>
