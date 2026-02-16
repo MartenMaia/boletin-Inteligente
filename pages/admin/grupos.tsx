@@ -41,55 +41,54 @@ export default function Grupos(){
         <Typography variant="h6">Configuração de Grupos</Typography>
       </Box>
 
-      <Paper sx={{ p:3 }} elevation={1}>
-        <Grid container spacing={3}>
-          {/* Groups configuration - use plain Box instead of nested Paper */}
-          <Grid item xs={12} md={6}>
-            <Box sx={{ p:3, borderRadius:1 }}>
-              <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
+      {/* REMOVE outer Paper — create two separate grid blocks each with its own Paper */}
+      <Grid container spacing={3}>
+        {/* Groups configuration block */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p:3 }} elevation={1}>
+            <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
 
-              <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
-                <Button variant="contained" onClick={createGroup}>Salvar</Button>
-              </Box>
-
-              <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
-              <List sx={{ maxHeight:300, overflow:'auto' }}>
-                {individuos?.map((i:any)=> (
-                  <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
-                    <Checkbox checked={selectedMembers.includes(i.id)} />
-                    <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-                  </ListItem>
-                ))}
-              </List>
+            <Box sx={{ display:'flex', gap:2, mb:2 }}>
+              <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
+              <Button variant="contained" onClick={createGroup}>Salvar</Button>
             </Box>
-          </Grid>
 
-          {/* Individuals management - use plain Box */}
-          <Grid item xs={12} md={6}>
-            <Box sx={{ p:3, borderRadius:1 }}>
-              <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
-
-              <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                <TextField placeholder="Nome" value={nome} onChange={(e)=>setNome(e.target.value)} />
-                <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} />
-                <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} />
-                <IconButton color="primary" onClick={addIndividuo} aria-label="adicionar">
-                  <AddIcon />
-                </IconButton>
-              </Box>
-
-              <List sx={{ maxHeight:380, overflow:'auto' }}>
-                {individuos?.map((i:any)=> (
-                  <ListItem key={i.id}>
-                    <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          </Grid>
+            <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
+            <List sx={{ maxHeight:300, overflow:'auto' }}>
+              {individuos?.map((i:any)=> (
+                <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
+                  <Checkbox checked={selectedMembers.includes(i.id)} />
+                  <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
         </Grid>
-      </Paper>
+
+        {/* Individuals management block */}
+        <Grid item xs={12} md={6}>
+          <Paper sx={{ p:3 }} elevation={1}>
+            <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
+
+            <Box sx={{ display:'flex', gap:2, mb:2 }}>
+              <TextField placeholder="Nome" value={nome} onChange={(e)=>setNome(e.target.value)} />
+              <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} />
+              <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} />
+              <IconButton color="primary" onClick={addIndividuo} aria-label="adicionar">
+                <AddIcon />
+              </IconButton>
+            </Box>
+
+            <List sx={{ maxHeight:380, overflow:'auto' }}>
+              {individuos?.map((i:any)=> (
+                <ListItem key={i.id}>
+                  <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
+                </ListItem>
+              ))}
+            </List>
+          </Paper>
+        </Grid>
+      </Grid>
     </AdminLayout>
   )
 }
