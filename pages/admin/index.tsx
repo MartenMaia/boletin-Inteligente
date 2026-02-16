@@ -3,6 +3,7 @@ import useSWR from 'swr'
 import { useRouter } from 'next/router'
 import { Container, Typography, Box, Button, Grid, Paper, List, ListItemButton, ListItemIcon, ListItemText, Table, TableHead, TableRow, TableCell, TableBody } from '@mui/material'
 import AdminLayout from '../../components/AdminLayout'
+import StatusBadge from '../../components/StatusBadge'
 import { formatDateShort, formatDateFull } from '../../utils/date'
 import EditIcon from '@mui/icons-material/Edit'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
@@ -12,6 +13,7 @@ import HomeIcon from '@mui/icons-material/Home'
 import ArticleIcon from '@mui/icons-material/Article'
 import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
+import { Grid, Card, CardContent, Box } from '@mui/material'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 
@@ -32,7 +34,22 @@ export default function AdminHome(){
   return (
     <AdminLayout>
       <Paper sx={{ p:3 }} elevation={1}>
-        <Typography variant="h5" sx={{ mb:2 }}>Visão Geral</Typography>
+        <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
+          <Box>
+            <Typography variant="h4" sx={{ display:'flex', alignItems:'center', gap:1 }}>
+              <Box component="span" sx={{ fontSize:28, mr:1 }}>👁️</Box> Visão Geral
+            </Typography>
+            <Box sx={{ mt:1, display:'flex', gap:2 }}>
+              <Card sx={{ minWidth:160, background: 'linear-gradient(90deg,#0f1720,#0b1220)', color:'white' }}><CardContent><Typography variant="subtitle2">Total de Boletins</Typography><Typography variant="h5">8</Typography></CardContent></Card>
+              <Card sx={{ minWidth:160, background: 'linear-gradient(90deg,#4f46e5,#6d28d9)', color:'white' }}><CardContent><Typography variant="subtitle2">Aguardando Aprovação</Typography><Typography variant="h5">3</Typography></CardContent></Card>
+              <Card sx={{ minWidth:160, background: 'linear-gradient(90deg,#065f46,#10b981)', color:'white' }}><CardContent><Typography variant="subtitle2">Enviados Hoje</Typography><Typography variant="h5">2</Typography></CardContent></Card>
+            </Box>
+          </Box>
+
+          <Box>
+            <Button variant="contained" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
+          </Box>
+        </Box>
 
         <Typography sx={{ mb:2 }}>Lista de boletins configurados pelo administrador:</Typography>
 
