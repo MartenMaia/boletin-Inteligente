@@ -81,11 +81,12 @@ export default function Grupos(){
     if(!nome) return setSnack({open:true,message:'Nome obrigatório',severity:'error'})
     setIndLoading(true)
     try{
-      const res = await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, local }), headers: { 'Content-Type': 'application/json' } })
-      if(!res.ok) throw new Error('Erro ao criar indivíduo')
-      const created = await res.json()
-      const createdName = created?.nome || nome
-      setNome(''); setTelefone(''); setLocal('')
+      const res = await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, email, local, notes }), headers: { 'Content-Type': 'application/json' } })
+      const bodyRes = await res.json().catch(()=>null)
+      if(!res.ok) throw new Error(bodyRes?.error || 'Erro ao criar indivíduo')
+      const created = bodyRes
+      const createdName = created?.name || created?.nome || nome
+      setNome(''); setTelefone(''); setEmail(''); setLocal(''); setNotes('')
       setOpenIndModal(false)
       await mutate('/api/individuos')
       setSnack({open:true,message:`Indivíduo "${createdName}" criado com sucesso`,severity:'success'})
