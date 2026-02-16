@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import useSWR, { mutate } from 'swr'
-import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar } from '@mui/material'
+import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, CircularProgress } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AdminLayout from '../../components/AdminLayout'
 
@@ -62,11 +62,13 @@ export default function Grupos(){
     try{
       const res = await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: groupName, membros: selectedMembers }), headers: { 'Content-Type': 'application/json' } })
       if(!res.ok) throw new Error('Erro ao criar grupo')
+      const created = await res.json()
+      const createdName = created?.name || groupName
       setGroupName('')
       setSelectedMembers([])
       setOpenGroupModal(false)
       await mutate('/api/grupos')
-      setSnack({open:true,message:'Grupo criado com sucesso',severity:'success'})
+      setSnack({open:true,message:`Grupo "${createdName}" criado com sucesso`,severity:'success'})
     }catch(e:any){
       console.error(e)
       setSnack({open:true,message:e?.message || 'Erro',severity:'error'})
@@ -79,10 +81,12 @@ export default function Grupos(){
     try{
       const res = await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, local }), headers: { 'Content-Type': 'application/json' } })
       if(!res.ok) throw new Error('Erro ao criar indivíduo')
+      const created = await res.json()
+      const createdName = created?.nome || nome
       setNome(''); setTelefone(''); setLocal('')
       setOpenIndModal(false)
       await mutate('/api/individuos')
-      setSnack({open:true,message:'Indivíduo criado com sucesso',severity:'success'})
+      setSnack({open:true,message:`Indivíduo "${createdName}" criado com sucesso`,severity:'success'})
     }catch(e:any){
       console.error(e)
       setSnack({open:true,message:e?.message || 'Erro',severity:'error'})
@@ -106,7 +110,7 @@ export default function Grupos(){
             <Grid item xs={12}>
               <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
                 <Typography variant="h6">Grupos Cadastrados</Typography>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={()=>setOpenGroupModal(true)} disabled={groupLoading}>Add +</Button>
+                <Button variant="contained" startIcon={groupLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenGroupModal(true)} disabled={groupLoading}>Add +</Button>
               </Box>
 
               <Paper sx={{ p:3 }} elevation={1}>
@@ -127,7 +131,7 @@ export default function Grupos(){
             <Grid item xs={12}>
               <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
                 <Typography variant="h6">Indivíduos Cadastrados</Typography>
-                <Button variant="contained" startIcon={<AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Add +</Button>
+                <Button variant="contained" startIcon={indLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Add +</Button>
               </Box>
 
               <Paper sx={{ p:3 }} elevation={1}>
@@ -164,7 +168,7 @@ export default function Grupos(){
         </DialogContent>
         <DialogActions>
           <Button onClick={()=>setOpenGroupModal(false)} disabled={groupLoading}>Cancelar</Button>
-          <Button variant="contained" onClick={handleCreateGroup} disabled={groupLoading}>{groupLoading ? 'Salvando...' : 'Salvar'}</Button>
+          <Button variant="contained" onClick={handleCreateGroup} disabled={groupLoading}>{groupLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}</Button>
         </DialogActions>
       </Dialog>
 
@@ -182,7 +186,7 @@ export default function Grupos(){
         </DialogContent>
         <DialogActions>
           <Button onClick={()=>setOpenIndModal(false)} disabled={indLoading}>Cancelar</Button>
-          <Button variant="contained" onClick={handleCreateInd} disabled={indLoading}>{indLoading ? 'Salvando...' : 'Salvar'}</Button>
+          <Button variant="contained" onClick={handleCreateInd} disabled={indLoading}>{indLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}</Button>
         </DialogActions>
       </Dialog>
 
