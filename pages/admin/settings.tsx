@@ -11,8 +11,99 @@ type Filters = {
 
 type Bairro = { id: number; name: string }
 
-// We will use the project's own bairros source (pages/api/bairros.ts)
 const CIDADE_DEFAULT = 'Florianópolis'
+
+// Fallback list (from Wikipedia: Lista de distritos e bairros de Florianópolis)
+// Source: https://pt.wikipedia.org/wiki/Lista_de_distritos_e_bairros_de_Florian%C3%B3polis
+const FLORIPA_BAIRROS: string[] = [
+  'Centro',
+  'Capivari',
+  'Rio Vermelho',
+  'Itacorubi',
+  'Trindade',
+  'Capoeiras',
+  'Agronômica',
+  'Saco dos Limões',
+  'Coqueiros',
+  'Jardim Atlântico',
+  'Córrego Grande',
+  'Tapera da Base',
+  'Canasvieiras',
+  'Monte Cristo',
+  'Costeira do Pirajubaé',
+  'Saco Grande',
+  'Estreito',
+  'Ingleses Centro',
+  'Abraão',
+  'Pantanal',
+  'Campeche Sul',
+  'Monte Verde',
+  'Campeche Central',
+  'Canto',
+  'Campeche Leste',
+  'João Paulo',
+  'Rio Tavares Central',
+  'Barra da Lagoa',
+  'Balneário',
+  'Vargem do Bom Jesus',
+  'Carianos',
+  'Jurere Leste',
+  'Campeche Norte',
+  'Lagoa',
+  'Cachoeira do Bom Jesus Leste',
+  'Santinho',
+  'Vargem Grande',
+  'Coloninha',
+  'Alto Ribeirão Leste',
+  'Ponta das Canas',
+  'Ressacada',
+  'Armação',
+  'Pântano do Sul',
+  'José Mendes',
+  'Ingleses Sul',
+  'Morro das Pedras',
+  'Lagoa Pequena',
+  'Alto Ribeirão',
+  'Rio Tavares do Norte',
+  'Cachoeira do Bom Jesus',
+  'Jurere Oeste',
+  'Moenda',
+  'Vargem de Fora',
+  'Ingleses Norte',
+  'Santo Antônio',
+  'Porto da Lagoa',
+  'Barra do Sambaqui',
+  'Sambaqui',
+  'Itaguaçu',
+  'Ratones',
+  'Ribeirão da Ilha',
+  'Açores',
+  'Cacupé',
+  'Santa Mônica',
+  'Bom Abrigo',
+  'Autódromo',
+  'Vargem Pequena',
+  'Morro do Peralta',
+  'Retiro',
+  'Daniela',
+  'Canto da Lagoa',
+  'Pedrita',
+  'Jurerê',
+  'Caiacanga',
+  'Tapera',
+  'Costeiro do Ribeirão',
+  'Lagoinha do Norte',
+  'Recanto dos Açores',
+  'Base Aérea',
+  'Canto do Lamim',
+  'Canto dos Araçás',
+  'Dunas da Lagoa',
+  'Praia Brava',
+  'Caieira',
+  'Rio das Pacas',
+  'Praia Mole',
+  'Forte'
+].sort((a,b)=>a.localeCompare(b,'pt-BR'))
 
 function TabPanel({ value, index, children }:{ value:number, index:number, children:React.ReactNode }){
   if(value !== index) return null
@@ -21,7 +112,7 @@ function TabPanel({ value, index, children }:{ value:number, index:number, child
 
 export default function Settings(){
   const [tab, setTab] = React.useState(0)
-  const [bairros, setBairros] = React.useState<string[]>(['Todos'])
+  const [bairros, setBairros] = React.useState<string[]>(['Todos', ...FLORIPA_BAIRROS])
   const [bairrosLoading, setBairrosLoading] = React.useState(false)
   const [bairrosError, setBairrosError] = React.useState<string | null>(null)
 
@@ -37,7 +128,7 @@ export default function Settings(){
     try{ localStorage.setItem(LS_KEY, JSON.stringify(filters)) }catch(e){}
   },[filters])
 
-  // Load bairros from backend (DB) and use them as Florianópolis bairros list.
+  // Try to load bairros from backend (DB). If unavailable/empty, keep the baked-in Florianópolis list.
   React.useEffect(()=>{
     let mounted = true
     setBairrosLoading(true)
@@ -45,16 +136,16 @@ export default function Settings(){
     ;(async ()=>{
       try{
         const res = await fetch('/api/bairros')
-        if(!res.ok) throw new Error('Falha ao carregar bairros')
+        if(!res.ok) throw new Error('Falha ao carregar bairros do servidor')
         const data = (await res.json()) as Bairro[]
         const names = Array.from(new Set((data||[]).map(b=>String(b.name).trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'))
-        if(mounted){
+        if(mounted && names.length){
           setBairros(['Todos', ...names])
         }
       }catch(e:any){
+        // fallback is already set; show warning for visibility
         if(mounted){
-          setBairrosError(e?.message || 'Erro ao carregar bairros')
-          setBairros(['Todos'])
+          setBairrosError(e?.message || 'Usando lista local de bairros (fallback)')
         }
       }finally{
         if(mounted) setBairrosLoading(false)
