@@ -62,7 +62,7 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
             <Button variant="contained" fullWidth sx={{ background:'#0ea5e9', color:'white', borderRadius:2 }} onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
 
             <Box sx={{ mt:1, display:'flex', alignItems:'center', justifyContent:'space-between', gap:2 }}>
-              <Box sx={{ display:'flex', alignItems':'center', gap:2 }}>
+              <Box sx={{ display:'flex', alignItems: 'center'', gap:2 }}>
                 <Avatar alt="Marten" src="/images/avatar-placeholder.png" />
                 <Box>
                   <Typography variant="body2">Marten</Typography>
