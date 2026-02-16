@@ -1,99 +1,158 @@
 import React, { useState } from 'react'
 import useSWR, { mutate } from 'swr'
 import { useRouter } from 'next/router'
-import { Paper, Typography, Box, Button, Grid, TextField, List, ListItem, ListItemText, Checkbox, IconButton } from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
+import { Paper, Typography, Table, TableHead, TableRow, TableCell, TableBody, IconButton, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Tooltip, Button, Box, TextField, Snackbar } from '@mui/material'
+import EditIcon from '@mui/icons-material/Edit'
+import CheckCircleIcon from '@mui/icons-material/CheckCircle'
+import DeleteIcon from '@mui/icons-material/Delete'
 import AdminLayout from '../../../components/AdminLayout'
+import { formatDateShort, formatDateFull } from '../../../utils/date'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 
-export default function BoletinsList(){
+export default function BoletinsList({themeMode, toggleTheme}:{themeMode?:string, toggleTheme?:()=>void}){
   const router = useRouter()
-  const { data: grupos } = useSWR('/api/grupos', fetcher)
-  const { data: individuos } = useSWR('/api/individuos', fetcher)
+  const { data: boletins } = useSWR('/api/boletins', fetcher)
+  const [openId, setOpenId] = useState<string | null>(null)
 
-  const [groupName, setGroupName] = useState('')
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [snack, setSnack] = useState<{open:boolean,message:string}>({open:false,message:''})
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string | null>(null)
+  const [groupFilter, setGroupFilter] = useState<string | null>(null)
 
-  const [nome, setNome] = useState('')
-  const [telefone, setTelefone] = useState('')
-  const [local, setLocal] = useState('')
-
-  const toggleMemberSelection = (id:string)=>{
-    setSelectedMembers(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
+  const handleDelete = async (id:string)=>{
+    setLoadingId(id)
+    const res = await fetch(`/api/boletins/${id}`, { method: 'DELETE' })
+    if(res.ok){
+      mutate('/api/boletins')
+      setSnack({open:true,message:'Boletim excluído'})
+    }else{
+      setSnack({open:true,message:'Erro ao excluir'})
+    }
+    setOpenId(null)
+    setLoadingId(null)
   }
 
-  const createGroup = async ()=>{
-    if(!groupName) return
-    await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: groupName, membros: selectedMembers }), headers: { 'Content-Type': 'application/json' } })
-    setGroupName('')
-    setSelectedMembers([])
-    mutate('/api/grupos')
-    mutate('/api/individuos')
+  const handleApprove = async (id:string)=>{
+    setLoadingId(id)
+    const res = await fetch(`/api/boletins/${id}/approve`, { method: 'POST' })
+    if(res.ok){
+      mutate('/api/boletins')
+      setSnack({open:true,message:'Boletim aprovado'})
+    }else{
+      setSnack({open:true,message:'Erro ao aprovar'})
+    }
+    setLoadingId(null)
   }
 
-  const addIndividuo = async ()=>{
-    if(!nome) return
-    await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, local }), headers: { 'Content-Type': 'application/json' } })
-    setNome(''); setTelefone(''); setLocal('')
-    mutate('/api/individuos')
-  }
+  const filtered = (boletins||[]).filter((b:any)=>{
+    if(query && !(b.nome||b.title||'').toLowerCase().includes(query.toLowerCase())) return false
+    if(statusFilter && b.status !== statusFilter) return false
+    if(groupFilter && b.grupoAlvo !== groupFilter && b.grupo !== groupFilter) return false
+    return true
+  })
 
   return (
-    <AdminLayout>
-      {/* keep title only */}
+    <AdminLayout themeMode={themeMode} toggleTheme={toggleTheme}>
+      {/* Page title outside Paper with button aligned */}
       <Box sx={{ mb:2, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <Typography variant="h5">Boletins</Typography>
+        <Box>
+          <Button variant="contained" color="primary" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
+        </Box>
       </Box>
 
       <Paper sx={{ p:3 }}>
-        <Grid container spacing={3}>
-          {/* Groups configuration */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p:3 }} elevation={1}>
-              <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
+        <Box sx={{ display:'flex', gap:2, mb:2 }}>
+          <TextField placeholder="Buscar boletins..." size="small" value={query} onChange={(e)=>setQuery(e.target.value)} />
+          <TextField select size="small" value={statusFilter||''} onChange={(e)=>setStatusFilter(e.target.value||null)} SelectProps={{displayEmpty:true}} sx={{ width:160 }}>
+            <option value="">Todos os status</option>
+            <option value="Rascunho">Rascunho</option>
+            <option value="Aguardando revisão">Aguardando revisão</option>
+            <option value="Aguardando aprovação">Aguardando aprovação</option>
+            <option value="Aprovado">Aprovado</option>
+          </TextField>
+          <TextField placeholder="Grupo" size="small" value={groupFilter||''} onChange={(e)=>setGroupFilter(e.target.value||null)} sx={{ width:140 }} />
+        </Box>
 
-              <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
-                <Button variant="contained" onClick={createGroup}>Salvar</Button>
-              </Box>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nome</TableCell>
+              <TableCell>Último envio</TableCell>
+              <TableCell>Próximo envio</TableCell>
+              <TableCell>Grupo</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Opções</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {boletins?.map((b:any)=>(
+              <TableRow key={b.id}>
+                <TableCell>{b.nome || b.title}</TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(b.ultimoEnvio)}>
+                    <span>{formatDateShort(b.ultimoEnvio)}</span>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>
+                  <Tooltip title={formatDateFull(b.proximoEnvio)}>
+                    <span>{formatDateShort(b.proximoEnvio)}</span>
+                  </Tooltip>
+                </TableCell>
+                <TableCell>{b.grupoAlvo||b.grupo||'-'}</TableCell>
+                <TableCell>{b.status||'Rascunho'}</TableCell>
+                <TableCell>
+                  <Tooltip title="Revisão">
+                    <IconButton size="small" onClick={()=>router.push(`/admin/boletins/${b.id}/revisao`)}>
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Aprovação">
+                    <span>
+                      <IconButton size="small" onClick={()=>setOpenId(`approve-${b.id}`)} disabled={!!loadingId}>
+                        <CheckCircleIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                  <Tooltip title="Excluir">
+                    <span>
+                      <IconButton size="small" color="error" onClick={()=>setOpenId(b.id)} disabled={!!loadingId}>
+                        <DeleteIcon />
+                      </IconButton>
+                    </span>
+                  </Tooltip>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
 
-              <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
-              <List sx={{ maxHeight:300, overflow:'auto' }}>
-                {individuos?.map((i:any)=> (
-                  <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
-                    <Checkbox checked={selectedMembers.includes(i.id)} />
-                    <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          </Grid>
+        <Dialog open={!!openId && !String(openId).startsWith('approve-')} onClose={()=>setOpenId(null)}>
+          <DialogTitle>Confirmar exclusão</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Tem certeza que deseja excluir este boletim? Esta ação não pode ser desfeita.</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={()=>setOpenId(null)}>Cancelar</Button>
+            <Button color="error" variant="contained" onClick={()=>openId && handleDelete(openId)}>Excluir</Button>
+          </DialogActions>
+        </Dialog>
 
-          {/* Individuals management */}
-          <Grid item xs={12} md={6}>
-            <Paper sx={{ p:3 }} elevation={1}>
-              <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
+        <Dialog open={!!openId && String(openId).startsWith('approve-')} onClose={()=>setOpenId(null)}>
+          <DialogTitle>Confirmar aprovação</DialogTitle>
+          <DialogContent>
+            <DialogContentText>Deseja realmente aprovar e agendar o envio deste boletim?</DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={()=>setOpenId(null)}>Cancelar</Button>
+            <Button variant="contained" onClick={()=>{ if(openId){ const id=String(openId).replace('approve-',''); handleApprove(id) } }}>Aprovar</Button>
+          </DialogActions>
+        </Dialog>
 
-              <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                <TextField placeholder="Nome" value={nome} onChange={(e)=>setNome(e.target.value)} />
-                <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} />
-                <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} />
-                <IconButton color="primary" onClick={addIndividuo} aria-label="adicionar">
-                  <AddIcon />
-                </IconButton>
-              </Box>
+        <Snackbar open={snack.open} autoHideDuration={3000} onClose={()=>setSnack({open:false,message:''})} message={snack.message} />
 
-              <List sx={{ maxHeight:380, overflow:'auto' }}>
-                {individuos?.map((i:any)=> (
-                  <ListItem key={i.id}>
-                    <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-                  </ListItem>
-                ))}
-              </List>
-            </Paper>
-          </Grid>
-        </Grid>
       </Paper>
     </AdminLayout>
   )
