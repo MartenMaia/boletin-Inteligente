@@ -44,7 +44,8 @@ export default function Grupos(){
       <Paper sx={{ p:3 }} elevation={1}>
         <Grid container spacing={3}>
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p:3 }} elevation={0}>
+            {/* Each section gets its own lighter Paper */}
+            <Paper sx={{ p:3 }} elevation={1}>
               <Box component="form" sx={{ display: 'flex', gap:2, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); createGroup() }}>
                 <TextField placeholder="Nome do grupo" fullWidth value={newName} onChange={(e)=>setNewName(e.target.value)} />
                 <Button variant="contained" onClick={createGroup}>Salvar</Button>
@@ -63,7 +64,7 @@ export default function Grupos(){
           </Grid>
 
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p:3 }} elevation={0}>
+            <Paper sx={{ p:3 }} elevation={1}>
               <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
               <Box sx={{ display:'flex', gap:2, mb:2 }}>
                 <TextField placeholder="Nome" value={newIndNome} onChange={(e)=>setNewIndNome(e.target.value)} />
