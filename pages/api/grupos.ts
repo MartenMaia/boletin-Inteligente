@@ -1,18 +1,15 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { PrismaClient } from '@prisma/client'
 
-let grupos = [
-  { id: 'g1', name: 'Centro', membros: [{id:'u1', nome:'João'}, {id:'u2', nome:'Maria'}] },
-  { id: 'g2', name: 'Norte', membros: [{id:'u3', nome:'Carlos'}] }
-]
+const prisma = new PrismaClient()
 
-export default function handler(req: NextApiRequest, res: NextApiResponse){
+export default async function handler(req: NextApiRequest, res: NextApiResponse){
   if(req.method === 'GET'){
+    const grupos = await prisma.group.findMany({ include: { membros: true } })
     res.status(200).json(grupos)
   }else if(req.method === 'POST'){
     const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body
-    const id = `g${Date.now()}`
-    const g = { id, name: body.name, membros: [] }
-    grupos.push(g)
+    const g = await prisma.group.create({ data: { name: body.name, description: body.description || '' } })
     res.status(200).json(g)
   }else{
     res.status(405).end()

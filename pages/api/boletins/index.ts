@@ -1,14 +1,16 @@
 import { NextApiRequest, NextApiResponse } from 'next'
+import { PrismaClient } from '@prisma/client'
 
-let boletins = [
-  { id: '1', nome: 'Boletim Centro', ultimoEnvio: '2026-02-01T10:00:00Z', proximoEnvio: '2026-03-01T10:00:00Z', grupoAlvo: 'Centro', status: 'Aguardando revisão', configurado: true },
-  { id: '2', nome: 'Boletim Norte', ultimoEnvio: '2026-02-05T12:00:00Z', proximoEnvio: '2026-03-05T12:00:00Z', grupoAlvo: 'Norte', status: 'Rascunho', configurado: true },
-  { id: '3', nome: 'Boletim Sul', ultimoEnvio: null, proximoEnvio: '2026-03-10T09:00:00Z', grupoAlvo: 'Sul', status: 'Aguardando aprovação', configurado: true }
-]
+const prisma = new PrismaClient()
 
-export default function handler(req: NextApiRequest, res: NextApiResponse){
+export default async function handler(req: NextApiRequest, res: NextApiResponse){
   if(req.method === 'GET'){
+    const boletins = await prisma.boletim.findMany({ orderBy: { proximoEnvio: 'asc' } })
     res.status(200).json(boletins)
+  }else if(req.method === 'POST'){
+    const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body
+    const created = await prisma.boletim.create({ data: body })
+    res.status(201).json(created)
   }else{
     res.status(405).end()
   }
