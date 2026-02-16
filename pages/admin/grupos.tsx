@@ -1,16 +1,19 @@
 import React, { useEffect, useState } from 'react'
-import useSWR, { mutate } from 'swr'
 import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, CircularProgress } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import AdminLayout from '../../components/AdminLayout'
 
-const fetcher = (url:string)=>fetch(url).then(r=>r.json())
+type Individuo = { id: string, name: string, telefone?: string, email?: string, local?: string, notes?: string }
+type Grupo = { id: string, name: string, membros: string[] }
+
+const LS_KEY_INDIV = 'bi_individuos_v1'
+const LS_KEY_GRUPOS = 'bi_grupos_v1'
 
 export default function Grupos(){
-  const { data: grupos } = useSWR('/api/grupos', fetcher)
-  const { data: individuos } = useSWR('/api/individuos', fetcher)
-
   const [tab, setTab] = useState(0)
+
+  const [grupos, setGrupos] = useState<Grupo[]>([])
+  const [individuos, setIndividuos] = useState<Individuo[]>([])
 
   // modal states
   const [openGroupModal, setOpenGroupModal] = useState(false)
@@ -33,26 +36,32 @@ export default function Grupos(){
   const [snack, setSnack] = useState<{open:boolean,message:string,severity?:'success'|'error'}>({open:false,message:'',severity:'success'})
 
   useEffect(()=>{
-    // seed sample data for simulation if endpoints return empty
-    (async ()=>{
-      try{
-        const ind = await fetch('/api/individuos').then(r=>r.json()).catch(()=>null)
-        const gr = await fetch('/api/grupos').then(r=>r.json()).catch(()=>null)
-        if((!ind || ind.length===0)){
-          await fetch('/api/individuos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:'Ana Silva', telefone:'(11) 99999-0001', local:'Centro'})})
-          await fetch('/api/individuos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:'João Pereira', telefone:'(11) 98888-0002', local:'Norte'})})
-          await fetch('/api/individuos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome:'Maria Costa', telefone:'(11) 97777-0003', local:'Sul'})})
-          mutate('/api/individuos')
-        }
-        if((!gr || gr.length===0)){
-          const inds = await fetch('/api/individuos').then(r=>r.json())
-          const memberIds = (inds||[]).slice(0,2).map((i:any)=>i.id)
-          await fetch('/api/grupos',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:'Equipe Centro', membros: memberIds})})
-          mutate('/api/grupos')
-        }
-      }catch(e){ /* ignore */ }
-    })()
+    // load from localStorage or seed sample data
+    const sInd = localStorage.getItem(LS_KEY_INDIV)
+    const sGrp = localStorage.getItem(LS_KEY_GRUPOS)
+    if(sInd){
+      try{ setIndividuos(JSON.parse(sInd)) }catch(e){ setIndividuos([]) }
+    }else{
+      const seed:Individuo[] = [
+        { id: 'i1', name: 'Ana Silva', telefone: '(11) 99999-0001', local: 'Centro' },
+        { id: 'i2', name: 'João Pereira', telefone: '(11) 98888-0002', local: 'Norte' },
+        { id: 'i3', name: 'Maria Costa', telefone: '(11) 97777-0003', local: 'Sul' }
+      ]
+      setIndividuos(seed)
+      localStorage.setItem(LS_KEY_INDIV, JSON.stringify(seed))
+    }
+
+    if(sGrp){
+      try{ setGrupos(JSON.parse(sGrp)) }catch(e){ setGrupos([]) }
+    }else{
+      const seedG:Grupo[] = [ { id: 'g1', name: 'Equipe Centro', membros: ['i1','i2'] } ]
+      setGrupos(seedG)
+      localStorage.setItem(LS_KEY_GRUPOS, JSON.stringify(seedG))
+    }
   },[])
+
+  useEffect(()=>{ localStorage.setItem(LS_KEY_INDIV, JSON.stringify(individuos)) },[individuos])
+  useEffect(()=>{ localStorage.setItem(LS_KEY_GRUPOS, JSON.stringify(grupos)) },[grupos])
 
   const toggleMemberSelection = (id:string)=>{
     setSelectedMembers(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
@@ -62,18 +71,16 @@ export default function Grupos(){
     if(!groupName) return setSnack({open:true,message:'Nome do grupo obrigatório',severity:'error'})
     setGroupLoading(true)
     try{
-      const res = await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: groupName, membros: selectedMembers }), headers: { 'Content-Type': 'application/json' } })
-      if(!res.ok) throw new Error('Erro ao criar grupo')
-      const created = await res.json()
-      const createdName = created?.name || groupName
+      const id = 'g' + Date.now()
+      const newG:Grupo = { id, name: groupName, membros: selectedMembers }
+      setGrupos(prev=>[...prev, newG])
       setGroupName('')
       setSelectedMembers([])
       setOpenGroupModal(false)
-      await mutate('/api/grupos')
-      setSnack({open:true,message:`Grupo "${createdName}" criado com sucesso`,severity:'success'})
+      setSnack({open:true,message:`Grupo "${newG.name}" criado com sucesso`,severity:'success'})
     }catch(e:any){
       console.error(e)
-      setSnack({open:true,message:e?.message || 'Erro',severity:'error'})
+      setSnack({open:true,message:'Erro ao criar grupo',severity:'error'})
     }finally{ setGroupLoading(false) }
   }
 
@@ -81,20 +88,19 @@ export default function Grupos(){
     if(!nome) return setSnack({open:true,message:'Nome obrigatório',severity:'error'})
     setIndLoading(true)
     try{
-      const res = await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, email, local, notes }), headers: { 'Content-Type': 'application/json' } })
-      const bodyRes = await res.json().catch(()=>null)
-      if(!res.ok) throw new Error(bodyRes?.error || 'Erro ao criar indivíduo')
-      const created = bodyRes
-      const createdName = created?.name || created?.nome || nome
+      const id = 'i' + Date.now()
+      const created:Individuo = { id, name: nome, telefone, email, local, notes }
+      setIndividuos(prev=>[created, ...prev])
       setNome(''); setTelefone(''); setEmail(''); setLocal(''); setNotes('')
       setOpenIndModal(false)
-      await mutate('/api/individuos')
-      setSnack({open:true,message:`Indivíduo "${createdName}" criado com sucesso`,severity:'success'})
+      setSnack({open:true,message:`Indivíduo "${created.name}" criado com sucesso`,severity:'success'})
     }catch(e:any){
       console.error(e)
-      setSnack({open:true,message:e?.message || 'Erro',severity:'error'})
+      setSnack({open:true,message:'Erro ao criar indivíduo',severity:'error'})
     }finally{ setIndLoading(false) }
   }
+
+  const isMemberSelected = (id:string)=> selectedMembers.includes(id)
 
   return (
     <AdminLayout>
@@ -118,9 +124,9 @@ export default function Grupos(){
 
               <Paper sx={{ p:3 }} elevation={1}>
                 <List>
-                  {grupos?.map((g:any)=> (
+                  {grupos.map((g)=> (
                     <ListItem key={g.id}>
-                      <ListItemText primary={g.name} secondary={`${(g.membros||[]).length} membros`} />
+                      <ListItemText primary={g.name} secondary={`${g.membros.length} membros`} />
                     </ListItem>
                   ))}
                 </List>
@@ -137,11 +143,11 @@ export default function Grupos(){
                 <Button variant="contained" startIcon={indLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Novo Cadastro</Button>
               </Box>
 
-                      <Paper sx={{ p:3 }} elevation={1}>
+              <Paper sx={{ p:3 }} elevation={1}>
                 <List sx={{ maxHeight:420, overflow:'auto' }}>
-                  {individuos?.map((i:any)=> (
+                  {individuos.map((i)=> (
                     <ListItem key={i.id}>
-                      <ListItemText primary={i.name || i.nome || i.email} secondary={`${i.contact || i.telefone || ''} ${i.bairroId? '— bairro#'+i.bairroId : ''}`} />
+                      <ListItemText primary={i.name} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
                     </ListItem>
                   ))}
                 </List>
@@ -161,10 +167,10 @@ export default function Grupos(){
           </Box>
           <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
           <List sx={{ maxHeight:300, overflow:'auto' }}>
-            {individuos?.map((i:any)=> (
+            {individuos.map((i)=> (
               <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
-                <Checkbox checked={selectedMembers.includes(i.id)} />
-                <ListItemText primary={i.name || i.nome || i.email} secondary={`${i.contact || i.telefone || ''} ${i.bairroId? '— bairro#'+i.bairroId : ''}`} />
+                <Checkbox checked={isMemberSelected(i.id)} />
+                <ListItemText primary={i.name} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
               </ListItem>
             ))}
           </List>
