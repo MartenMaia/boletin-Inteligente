@@ -26,27 +26,27 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
       <Box sx={{ display: 'flex' }}>
         <Box component="aside" sx={{ width: 260, height: '100vh', position: 'fixed', left:0, top:0, pt:2, px:2, backgroundColor: (theme)=>theme.palette.mode==='dark'? '#071627' : '#fff', boxShadow: 3, overflowY: 'auto', borderRight: (theme)=>`1px solid ${theme.palette.divider}` }}>
           <Box sx={{ mb:3, px:1 }}>
-            <Typography variant="subtitle1" sx={{ color:'#fff', mb:1 }}>Painel</Typography>
+            <Typography variant="subtitle1" sx={(theme)=>({ color: theme.palette.mode==='dark' ? '#fff' : 'rgba(0,0,0,0.85)', mb:1 })}>Painel</Typography>
           </Box>
 
           <List sx={{ display:'flex', flexDirection:'column', gap:1 }}>
-            <ListItemButton sx={(theme)=>({ color: 'white', borderRadius:2, bgcolor: router.pathname === '/admin' ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname === '/admin'} onClick={()=>router.push('/admin')}>
-              <ListItemIcon sx={{ color: 'white', minWidth:40 }}><HomeIcon fontSize='medium' /></ListItemIcon>
+            <ListItemButton sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.85)', borderRadius:2, bgcolor: router.pathname === '/admin' ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname === '/admin'} onClick={()=>router.push('/admin')}>
+              <ListItemIcon sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.6)', minWidth:40 })}><HomeIcon fontSize='medium' /></ListItemIcon>
               <ListItemText primary="Visão Geral" />
             </ListItemButton>
 
-            <ListItemButton sx={(theme)=>({ color: 'white', borderRadius:2, bgcolor: router.pathname.startsWith('/admin/boletins') ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname.startsWith('/admin/boletins')} onClick={()=>router.push('/admin/boletins')}>
-              <ListItemIcon sx={{ color: 'white', minWidth:40 }}><ArticleIcon fontSize='medium' /></ListItemIcon>
+            <ListItemButton sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.85)', borderRadius:2, bgcolor: router.pathname.startsWith('/admin/boletins') ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname.startsWith('/admin/boletins')} onClick={()=>router.push('/admin/boletins')}>
+              <ListItemIcon sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.6)', minWidth:40 })}><ArticleIcon fontSize='medium' /></ListItemIcon>
               <ListItemText primary="Boletins" />
             </ListItemButton>
 
-            <ListItemButton sx={(theme)=>({ color: 'white', borderRadius:2, bgcolor: router.pathname.startsWith('/admin/grupos') ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname.startsWith('/admin/grupos')} onClick={()=>router.push('/admin/grupos')}>
-              <ListItemIcon sx={{ color: 'white', minWidth:40 }}><PeopleIcon fontSize='medium' /></ListItemIcon>
+            <ListItemButton sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.85)', borderRadius:2, bgcolor: router.pathname.startsWith('/admin/grupos') ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname.startsWith('/admin/grupos')} onClick={()=>router.push('/admin/grupos')}>
+              <ListItemIcon sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.6)', minWidth:40 })}><PeopleIcon fontSize='medium' /></ListItemIcon>
               <ListItemText primary="Grupos" />
             </ListItemButton>
 
-            <ListItemButton sx={(theme)=>({ color: 'white', borderRadius:2, bgcolor: router.pathname === '/admin/settings' ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname === '/admin/settings'} onClick={()=>router.push('/admin/settings')}>
-              <ListItemIcon sx={{ color: 'white', minWidth:40 }}><SettingsIcon fontSize='medium' /></ListItemIcon>
+            <ListItemButton sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.85)', borderRadius:2, bgcolor: router.pathname === '/admin/settings' ? (theme.palette.mode==='dark'? 'rgba(255,255,255,0.04)' : '#e6f7ff') : 'transparent' })} selected={router.pathname === '/admin/settings'} onClick={()=>router.push('/admin/settings')}>
+              <ListItemIcon sx={(theme)=>({ color: theme.palette.mode==='dark' ? 'white' : 'rgba(0,0,0,0.6)', minWidth:40 })}><SettingsIcon fontSize='medium' /></ListItemIcon>
               <ListItemText primary="Configurações" />
             </ListItemButton>
           </List>
