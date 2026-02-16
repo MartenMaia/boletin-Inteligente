@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react'
-import { Container, Grid, Paper, Typography, Box, List, ListItemButton, ListItemIcon, ListItemText, Button, AppBar, Toolbar, IconButton, Avatar } from '@mui/material'
+import { Container, Grid, Paper, Typography, Box, List, ListItemButton, ListItemIcon, ListItemText, Button, Avatar, IconButton } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
 import ArticleIcon from '@mui/icons-material/Article'
 import PeopleIcon from '@mui/icons-material/People'
@@ -21,14 +21,10 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
 
   return (
     <div>
-      <AppBar position="static" color="transparent" elevation={0} sx={{ mb:0 }}>
-        <Toolbar sx={{ px:0 }}>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>Boletim Inteligente</Typography>
-        </Toolbar>
-      </AppBar>
+      {/* Header removed intentionally to let page content align to the top */}
 
       <Box sx={{ display: 'flex' }}>
-        <Box component="aside" sx={{ width: 260, height: '100vh', position: 'fixed', left:0, top:0, pt:8, px:2, backgroundColor: (theme)=>theme.palette.mode==='dark'? '#071627' : '#fff', boxShadow: 3, overflowY: 'auto', borderRight: (theme)=>`1px solid ${theme.palette.divider}` }}>
+        <Box component="aside" sx={{ width: 260, height: '100vh', position: 'fixed', left:0, top:0, pt:2, px:2, backgroundColor: (theme)=>theme.palette.mode==='dark'? '#071627' : '#fff', boxShadow: 3, overflowY: 'auto', borderRight: (theme)=>`1px solid ${theme.palette.divider}` }}>
           <Box sx={{ mb:3, px:1 }}>
             <Typography variant="subtitle1" sx={{ color:'#fff', mb:1 }}>Painel</Typography>
           </Box>
