@@ -27,7 +27,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    const inv = await prisma.groupMember.create({ data: { name, contact, bairroId } })
+    // ensure there is a groupId (GroupId is required in schema). If none provided, attach to a default group.
+    let groupId = body.groupId || null
+    if(!groupId){
+      let anyGroup = await prisma.group.findFirst()
+      if(!anyGroup){
+        anyGroup = await prisma.group.create({ data: { name: 'Sem Grupo' } })
+      }
+      groupId = anyGroup.id
+    }
+
+    const inv = await prisma.groupMember.create({ data: { name, contact, bairroId, groupId } })
     res.status(200).json(inv)
   }else{
     res.status(405).end()
