@@ -100,10 +100,28 @@ export default function Grupos(){
     setOpenGroupModal(true)
   }
 
-  const validateEmail = (em:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)
+  const validateEmail = (em:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(em||'').trim())
+
+  // Brazilian phone validation (DDD required):
+  // - 10 digits: (DD) NNNN-NNNN (landline)
+  // - 11 digits: (DD) 9NNNN-NNNN (mobile)
+  const validatePhoneBR = (v:string)=>{
+    const d = String(v||'').replace(/\D/g,'')
+    if(d.length === 10){
+      const ddd = d.slice(0,2)
+      return /^[1-9]{2}$/.test(ddd) && /^\d{8}$/.test(d.slice(2))
+    }
+    if(d.length === 11){
+      const ddd = d.slice(0,2)
+      const rest = d.slice(2)
+      return /^[1-9]{2}$/.test(ddd) && rest[0] === '9' && /^\d{9}$/.test(rest)
+    }
+    return false
+  }
+
   const formatPhone = (v:string)=>{
-    const d = v.replace(/\D/g,'')
-    if(d.length <=2) return d
+    const d = String(v||'').replace(/\D/g,'').slice(0,11)
+    if(d.length <= 2) return d
     if(d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`
     if(d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
     return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7,11)}`
@@ -111,7 +129,7 @@ export default function Grupos(){
 
   const handleCreateInd = async ()=>{
     if(!nome) return setSnack({open:true,message:'Nome obrigatório',severity:'error'})
-    if(!telefone || telefone.replace(/\D/g,'').length < 10) return setSnack({open:true,message:'Telefone inválido',severity:'error'})
+    if(!telefone || !validatePhoneBR(telefone)) return setSnack({open:true,message:'Telefone inválido (inclua DDD). Ex: (11) 91234-5678',severity:'error'})
     if(!email || !validateEmail(email)) return setSnack({open:true,message:'Email inválido',severity:'error'})
     setIndLoading(true)
     try{
@@ -217,10 +235,28 @@ export default function Grupos(){
         <DialogTitle>Novo Indivíduo</DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ display:'flex', flexDirection:'column', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateInd() }}>
-            <TextField placeholder="Nome" fullWidth value={nome} onChange={(e)=>setNome(e.target.value)} />
+            <TextField placeholder="Nome" fullWidth value={nome} onChange={(e)=>setNome(e.target.value)} required />
             <Box sx={{ display:'flex', gap:2 }}>
-              <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} sx={{ width:200 }} />
-              <TextField placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} sx={{ width:240 }} />
+              <TextField
+                placeholder="Telefone"
+                value={telefone}
+                onChange={(e)=>setTelefone(formatPhone(e.target.value))}
+                inputProps={{ inputMode: 'numeric', pattern: "[0-9]*" }}
+                error={!!telefone && !validatePhoneBR(telefone)}
+                helperText={telefone && !validatePhoneBR(telefone) ? 'Use DDD + número válido. Ex: (11) 91234-5678' : ' '}
+                required
+                sx={{ width:200 }}
+              />
+              <TextField
+                placeholder="Email"
+                type="email"
+                value={email}
+                onChange={(e)=>setEmail(e.target.value.replace(/\s/g,'').toLowerCase())}
+                error={!!email && !validateEmail(email)}
+                helperText={email && !validateEmail(email) ? 'Informe um email válido (ex: nome@dominio.com)' : ' '}
+                required
+                sx={{ width:240 }}
+              />
               <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} sx={{ width:200 }} />
             </Box>
             <TextField placeholder="Observações / Notas" value={notes} onChange={(e)=>setNotes(e.target.value)} multiline rows={3} />
@@ -228,7 +264,13 @@ export default function Grupos(){
         </DialogContent>
         <DialogActions>
           <Button onClick={()=>setOpenIndModal(false)} disabled={indLoading}>Cancelar</Button>
-          <Button variant="contained" onClick={handleCreateInd} disabled={indLoading}>{indLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}</Button>
+          <Button
+            variant="contained"
+            onClick={handleCreateInd}
+            disabled={indLoading || !nome || !validatePhoneBR(telefone) || !validateEmail(email)}
+          >
+            {indLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}
+          </Button>
         </DialogActions>
       </Dialog>
 
