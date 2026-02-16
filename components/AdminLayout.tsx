@@ -58,15 +58,20 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
             </ListItemButton>
           </List>
 
-          <Box sx={{ mt:'auto', py:3 }}>
+          <Box sx={{ mt:'auto', py:3, display:'flex', flexDirection:'column', gap:2 }}>
             <Button variant="contained" fullWidth sx={{ background:'#0ea5e9', color:'white', borderRadius:2 }} onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
 
-            <Box sx={{ mt:2, display:'flex', alignItems:'center', gap:2 }}>
-              <Avatar alt="Marten" src="/images/avatar-placeholder.png" />
-              <Box>
-                <Typography variant="body2">Marten</Typography>
-                <Typography variant="caption" sx={{ opacity:0.8 }}>Administrador</Typography>
+            <Box sx={{ mt:1, display:'flex', alignItems:'center', justifyContent:'space-between', gap:2 }}>
+              <Box sx={{ display:'flex', alignItems':'center', gap:2 }}>
+                <Avatar alt="Marten" src="/images/avatar-placeholder.png" />
+                <Box>
+                  <Typography variant="body2">Marten</Typography>
+                  <Typography variant="caption" sx={{ opacity:0.8 }}>Administrador</Typography>
+                </Box>
               </Box>
+              <IconButton onClick={toggle} color="inherit" aria-label="toggle theme" sx={{ bgcolor: (theme)=> theme.palette.mode==='dark'? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' }}>
+                {currentMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
+              </IconButton>
             </Box>
           </Box>
         </Box>
