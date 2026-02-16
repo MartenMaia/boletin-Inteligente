@@ -24,7 +24,9 @@ export default function Grupos(){
   // individual form
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
+  const [email, setEmail] = useState('')
   const [local, setLocal] = useState('')
+  const [notes, setNotes] = useState('')
   const [indLoading, setIndLoading] = useState(false)
 
   // snackbar
@@ -110,7 +112,7 @@ export default function Grupos(){
             <Grid item xs={12}>
               <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
                 <Typography variant="h6">Grupos Cadastrados</Typography>
-                <Button variant="contained" startIcon={groupLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenGroupModal(true)} disabled={groupLoading}>Add +</Button>
+                <Button variant="contained" startIcon={groupLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenGroupModal(true)} disabled={groupLoading}>Novo Grupo</Button>
               </Box>
 
               <Paper sx={{ p:3 }} elevation={1}>
@@ -131,14 +133,14 @@ export default function Grupos(){
             <Grid item xs={12}>
               <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
                 <Typography variant="h6">Indivíduos Cadastrados</Typography>
-                <Button variant="contained" startIcon={indLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Add +</Button>
+                <Button variant="contained" startIcon={indLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Novo Cadastro</Button>
               </Box>
 
-              <Paper sx={{ p:3 }} elevation={1}>
+                      <Paper sx={{ p:3 }} elevation={1}>
                 <List sx={{ maxHeight:420, overflow:'auto' }}>
                   {individuos?.map((i:any)=> (
                     <ListItem key={i.id}>
-                      <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
+                      <ListItemText primary={i.name || i.nome || i.email} secondary={`${i.contact || i.telefone || ''} ${i.bairroId? '— bairro#'+i.bairroId : ''}`} />
                     </ListItem>
                   ))}
                 </List>
@@ -161,7 +163,7 @@ export default function Grupos(){
             {individuos?.map((i:any)=> (
               <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
                 <Checkbox checked={selectedMembers.includes(i.id)} />
-                <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
+                <ListItemText primary={i.name || i.nome || i.email} secondary={`${i.contact || i.telefone || ''} ${i.bairroId? '— bairro#'+i.bairroId : ''}`} />
               </ListItem>
             ))}
           </List>
@@ -176,12 +178,14 @@ export default function Grupos(){
       <Dialog open={openIndModal} onClose={()=>setOpenIndModal(false)} fullWidth maxWidth="sm">
         <DialogTitle>Novo Indivíduo</DialogTitle>
         <DialogContent>
-          <Box component="form" sx={{ display:'flex', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateInd() }}>
+          <Box component="form" sx={{ display:'flex', flexDirection:'column', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateInd() }}>
             <TextField placeholder="Nome" fullWidth value={nome} onChange={(e)=>setNome(e.target.value)} />
-          </Box>
-          <Box sx={{ display:'flex', gap:2, mb:2 }}>
-            <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} sx={{ width:200 }} />
-            <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} sx={{ width:200 }} />
+            <Box sx={{ display:'flex', gap:2 }}>
+              <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} sx={{ width:200 }} />
+              <TextField placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} sx={{ width:240 }} />
+              <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} sx={{ width:200 }} />
+            </Box>
+            <TextField placeholder="Observações / Notas" value={notes} onChange={(e)=>setNotes(e.target.value)} multiline rows={3} />
           </Box>
         </DialogContent>
         <DialogActions>
