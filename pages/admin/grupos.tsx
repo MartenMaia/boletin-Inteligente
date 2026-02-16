@@ -57,7 +57,7 @@ export default function Grupos(){
   }
 
   const handleCreateGroup = async ()=>{
-    if(!groupName) return
+    if(!groupName) return setSnack({open:true,message:'Nome do grupo obrigatório',severity:'error'})
     setGroupLoading(true)
     try{
       const res = await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: groupName, membros: selectedMembers }), headers: { 'Content-Type': 'application/json' } })
@@ -65,24 +65,26 @@ export default function Grupos(){
       setGroupName('')
       setSelectedMembers([])
       setOpenGroupModal(false)
-      mutate('/api/grupos')
+      await mutate('/api/grupos')
       setSnack({open:true,message:'Grupo criado com sucesso',severity:'success'})
     }catch(e:any){
+      console.error(e)
       setSnack({open:true,message:e?.message || 'Erro',severity:'error'})
     }finally{ setGroupLoading(false) }
   }
 
   const handleCreateInd = async ()=>{
-    if(!nome) return
+    if(!nome) return setSnack({open:true,message:'Nome obrigatório',severity:'error'})
     setIndLoading(true)
     try{
       const res = await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, local }), headers: { 'Content-Type': 'application/json' } })
       if(!res.ok) throw new Error('Erro ao criar indivíduo')
       setNome(''); setTelefone(''); setLocal('')
       setOpenIndModal(false)
-      mutate('/api/individuos')
+      await mutate('/api/individuos')
       setSnack({open:true,message:'Indivíduo criado com sucesso',severity:'success'})
     }catch(e:any){
+      console.error(e)
       setSnack({open:true,message:e?.message || 'Erro',severity:'error'})
     }finally{ setIndLoading(false) }
   }
@@ -93,20 +95,21 @@ export default function Grupos(){
         <Typography variant="h6">Configuração de Grupos</Typography>
       </Box>
 
-      <Paper sx={{ p:0 }} elevation={0}>
-        <Tabs value={tab} onChange={(_,v)=>setTab(v)} sx={{ mb:2 }}>
-          <Tab label="Grupos" />
-          <Tab label="Indivíduos" />
+      <Box sx={{ bgcolor: 'transparent' }}>
+        <Tabs value={tab} onChange={(_,v)=>setTab(v)} sx={{ mb:2, backgroundColor: 'transparent' }} TabIndicatorProps={{ style: { backgroundColor: '#90caf9' } }}>
+          <Tab label="Grupos" sx={{ background: 'transparent' }} />
+          <Tab label="Indivíduos" sx={{ background: 'transparent' }} />
         </Tabs>
 
         {tab === 0 && (
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Box sx={{ display:'flex', justifyContent:'flex-end', mb:2 }}>
+              <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
+                <Typography variant="h6">Grupos Cadastrados</Typography>
                 <Button variant="contained" startIcon={<AddIcon />} onClick={()=>setOpenGroupModal(true)} disabled={groupLoading}>Add +</Button>
               </Box>
+
               <Paper sx={{ p:3 }} elevation={1}>
-                <Typography variant="h6" sx={{ mb:2 }}>Grupos Cadastrados</Typography>
                 <List>
                   {grupos?.map((g:any)=> (
                     <ListItem key={g.id}>
@@ -122,11 +125,12 @@ export default function Grupos(){
         {tab === 1 && (
           <Grid container spacing={3}>
             <Grid item xs={12}>
-              <Box sx={{ display:'flex', justifyContent:'flex-end', mb:2 }}>
+              <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
+                <Typography variant="h6">Indivíduos Cadastrados</Typography>
                 <Button variant="contained" startIcon={<AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Add +</Button>
               </Box>
+
               <Paper sx={{ p:3 }} elevation={1}>
-                <Typography variant="h6" sx={{ mb:2 }}>Indivíduos Cadastrados</Typography>
                 <List sx={{ maxHeight:420, overflow:'auto' }}>
                   {individuos?.map((i:any)=> (
                     <ListItem key={i.id}>
@@ -139,13 +143,13 @@ export default function Grupos(){
           </Grid>
         )}
 
-      </Paper>
+      </Box>
 
       {/* Group Modal */}
       <Dialog open={openGroupModal} onClose={()=>setOpenGroupModal(false)} fullWidth maxWidth="sm">
         <DialogTitle>Novo Grupo</DialogTitle>
         <DialogContent>
-          <Box sx={{ display:'flex', gap:2, mt:1, mb:2 }}>
+          <Box component="form" sx={{ display:'flex', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateGroup() }}>
             <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
           </Box>
           <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
@@ -168,7 +172,7 @@ export default function Grupos(){
       <Dialog open={openIndModal} onClose={()=>setOpenIndModal(false)} fullWidth maxWidth="sm">
         <DialogTitle>Novo Indivíduo</DialogTitle>
         <DialogContent>
-          <Box sx={{ display:'flex', gap:2, mt:1, mb:2 }}>
+          <Box component="form" sx={{ display:'flex', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateInd() }}>
             <TextField placeholder="Nome" fullWidth value={nome} onChange={(e)=>setNome(e.target.value)} />
           </Box>
           <Box sx={{ display:'flex', gap:2, mb:2 }}>
