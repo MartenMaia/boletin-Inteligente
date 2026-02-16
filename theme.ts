@@ -19,7 +19,17 @@ export const darkTheme = createTheme({
 export const lightTheme = createTheme({
   palette: {
     mode: 'light',
-    primary: { main: '#1976d2' }
+    primary: { main: '#1976d2' },
+    background: { default: '#f5f7fb', paper: '#ffffff' },
+    divider: 'rgba(0,0,0,0.08)',
+    text: { primary: 'rgba(0,0,0,0.87)', secondary: 'rgba(0,0,0,0.6)' }
+  },
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: { borderRadius: 8 }
+      }
+    }
   }
 })
 

@@ -12,6 +12,10 @@ export default function App({ Component, pageProps }: AppProps){
     try{ return (localStorage.getItem('bi_theme') as 'dark'|'light') || 'dark' }catch(e){ return 'dark' }
   })
 
+  React.useEffect(()=>{
+    try{ document.documentElement.dataset.theme = mode }catch(e){}
+  },[mode])
+
   const toggle = ()=>{
     const next = mode === 'dark' ? 'light' : 'dark'
     setMode(next)
