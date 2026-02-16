@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, CircularProgress } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import EditIcon from '@mui/icons-material/Edit'
 import AdminLayout from '../../components/AdminLayout'
 
 type Individuo = { id: string, name: string, telefone?: string, email?: string, local?: string, notes?: string }
@@ -23,6 +24,7 @@ export default function Grupos(){
   const [groupName, setGroupName] = useState('')
   const [selectedMembers, setSelectedMembers] = useState<string[]>([])
   const [groupLoading, setGroupLoading] = useState(false)
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
 
   // individual form
   const [nome, setNome] = useState('')
@@ -71,21 +73,46 @@ export default function Grupos(){
     if(!groupName) return setSnack({open:true,message:'Nome do grupo obrigatório',severity:'error'})
     setGroupLoading(true)
     try{
-      const id = 'g' + Date.now()
-      const newG:Grupo = { id, name: groupName, membros: selectedMembers }
-      setGrupos(prev=>[...prev, newG])
+      if(editingGroupId){
+        // update existing
+        setGrupos(prev=> prev.map(g => g.id === editingGroupId ? { ...g, name: groupName, membros: selectedMembers } : g))
+        setSnack({open:true,message:`Grupo "${groupName}" atualizado com sucesso`,severity:'success'})
+      }else{
+        const id = 'g' + Date.now()
+        const newG:Grupo = { id, name: groupName, membros: selectedMembers }
+        setGrupos(prev=>[...prev, newG])
+        setSnack({open:true,message:`Grupo "${newG.name}" criado com sucesso`,severity:'success'})
+      }
       setGroupName('')
       setSelectedMembers([])
+      setEditingGroupId(null)
       setOpenGroupModal(false)
-      setSnack({open:true,message:`Grupo "${newG.name}" criado com sucesso`,severity:'success'})
     }catch(e:any){
       console.error(e)
-      setSnack({open:true,message:'Erro ao criar grupo',severity:'error'})
+      setSnack({open:true,message:'Erro ao criar/atualizar grupo',severity:'error'})
     }finally{ setGroupLoading(false) }
+  }
+
+  const startEditGroup = (g:Grupo)=>{
+    setEditingGroupId(g.id)
+    setGroupName(g.name)
+    setSelectedMembers(g.membros || [])
+    setOpenGroupModal(true)
+  }
+
+  const validateEmail = (em:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)
+  const formatPhone = (v:string)=>{
+    const d = v.replace(/\D/g,'')
+    if(d.length <=2) return d
+    if(d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`
+    if(d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+    return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7,11)}`
   }
 
   const handleCreateInd = async ()=>{
     if(!nome) return setSnack({open:true,message:'Nome obrigatório',severity:'error'})
+    if(!telefone || telefone.replace(/\D/g,'').length < 10) return setSnack({open:true,message:'Telefone inválido',severity:'error'})
+    if(!email || !validateEmail(email)) return setSnack({open:true,message:'Email inválido',severity:'error'})
     setIndLoading(true)
     try{
       const id = 'i' + Date.now()
@@ -123,9 +150,13 @@ export default function Grupos(){
               </Box>
 
               <Paper sx={{ p:3 }} elevation={1}>
-                <List>
+                <List sx={{ maxHeight:360, overflow:'auto', px:0, '&::-webkit-scrollbar': { height:8, width:8 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.08)', borderRadius: 8 }, '&::-webkit-scrollbar-track': { background: 'transparent' } }}>
                   {grupos.map((g)=> (
-                    <ListItem key={g.id}>
+                    <ListItem key={g.id' } secondaryAction={
+                      <IconButton edge="end" aria-label="editar" onClick={()=>startEditGroup(g)}>
+                        <EditIcon />
+                      </IconButton>
+                    }>
                       <ListItemText primary={g.name} secondary={`${g.membros.length} membros`} />
                     </ListItem>
                   ))}
@@ -144,7 +175,7 @@ export default function Grupos(){
               </Box>
 
               <Paper sx={{ p:3 }} elevation={1}>
-                <List sx={{ maxHeight:420, overflow:'auto' }}>
+                <List sx={{ maxHeight:420, overflow:'auto', '&::-webkit-scrollbar': { height:8, width:8 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.08)', borderRadius: 8 }, '&::-webkit-scrollbar-track': { background: 'transparent' } }}>
                   {individuos.map((i)=> (
                     <ListItem key={i.id}>
                       <ListItemText primary={i.name} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
