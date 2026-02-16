@@ -43,6 +43,7 @@ export default function AdminHome(){
               <Card sx={{ minWidth:160, background: 'linear-gradient(90deg,#0f1720,#0b1220)', color:'white' }}><CardContent><Typography variant="subtitle2">Total de Boletins</Typography><Typography variant="h5">8</Typography></CardContent></Card>
               <Card sx={{ minWidth:160, background: 'linear-gradient(90deg,#4f46e5,#6d28d9)', color:'white' }}><CardContent><Typography variant="subtitle2">Aguardando Aprovação</Typography><Typography variant="h5">3</Typography></CardContent></Card>
               <Card sx={{ minWidth:160, background: 'linear-gradient(90deg,#065f46,#10b981)', color:'white' }}><CardContent><Typography variant="subtitle2">Enviados Hoje</Typography><Typography variant="h5">2</Typography></CardContent></Card>
+              <Card sx={{ minWidth:240, background: 'linear-gradient(90deg,#b45309,#f59e0b)', color:'white' }}><CardContent><Typography variant="subtitle2">Próximo Envio</Typography><Typography variant="h6">Centro em {formatDateShort(new Date(Date.now()+6*24*60*60*1000).toISOString())}</Typography><Typography variant="caption">em 6 dias</Typography></CardContent></Card>
             </Box>
           </Box>
 
@@ -50,6 +51,8 @@ export default function AdminHome(){
             <Button variant="contained" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
           </Box>
         </Box>
+
+        <Divider sx={{ my:3 }} />
 
         <Typography sx={{ mb:2 }}>Lista de boletins configurados pelo administrador:</Typography>
 
