@@ -15,6 +15,21 @@ async function main(){
   // seed bulletin settings example
   await prisma.bulletinSettings.create({ data: { title: 'Boletim diário padrão', types: JSON.stringify(['Segurança','Movimentação']), sources: JSON.stringify(['manual']), approver: 'Redator', frequency: 'Diário', segmentation: JSON.stringify(['Bairro']), groupId: g.id } })
 
+  // seed sample boletins for UI testing
+  const now = new Date()
+  const bDate1 = new Date(now.getTime() - 5*24*60*60*1000) // 5 days ago
+  const pDate1 = new Date(now.getTime() + 6*24*60*60*1000) // in 6 days
+  const bDate2 = new Date(now.getTime() - 18*24*60*60*1000) // 18 days ago
+  const pDate2 = new Date(now.getTime() + 9*24*60*60*1000) // in 9 days
+  const bDate3 = null
+  const pDate3 = new Date(now.getTime() + 14*24*60*60*1000) // in 14 days
+
+  await prisma.boletim.createMany({ data: [
+    { title: 'Boletim Centro', conteudo: 'Conteúdo do boletim Centro', ultimoEnvio: bDate1.toISOString(), proximoEnvio: pDate1.toISOString(), grupoAlvo: 'Centro', status: 'Aguardando revisão' },
+    { title: 'Boletim Norte', conteudo: 'Conteúdo do boletim Norte', ultimoEnvio: bDate2.toISOString(), proximoEnvio: pDate2.toISOString(), grupoAlvo: 'Norte', status: 'Rascunho' },
+    { title: 'Boletim Sul', conteudo: 'Conteúdo do boletim Sul', ultimoEnvio: null, proximoEnvio: pDate3.toISOString(), grupoAlvo: 'Sul', status: 'Aguardando aprovação' }
+  ]})
+
   console.log('Seed completo')
 }
 
