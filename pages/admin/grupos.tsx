@@ -1,37 +1,37 @@
-import React from 'react'
+import React, { useState } from 'react'
 import useSWR from 'swr'
-import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Tooltip } from '@mui/material'
+import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import RemoveIcon from '@mui/icons-material/Remove'
 import AdminLayout from '../../components/AdminLayout'
 
 const fetcher = (url:string)=>fetch(url).then(r=>r.json())
 
 export default function Grupos(){
-  const { data: grupos, mutate: mutateGrupos } = useSWR('/api/grupos', fetcher)
-  const { data: individuos, mutate: mutateIndividuos } = useSWR('/api/individuos', fetcher)
-  const [newName, setNewName] = React.useState('')
-  const [selectedGroup, setSelectedGroup] = React.useState<string | null>(null)
-  const [newIndNome, setNewIndNome] = React.useState('')
-  const [newIndEmail, setNewIndEmail] = React.useState('')
+  const { data: grupos } = useSWR('/api/grupos', fetcher)
+  const { data: individuos } = useSWR('/api/individuos', fetcher)
+
+  const [groupName, setGroupName] = useState('')
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+
+  const [nome, setNome] = useState('')
+  const [telefone, setTelefone] = useState('')
+  const [local, setLocal] = useState('')
+
+  const toggleMemberSelection = (id:string)=>{
+    setSelectedMembers(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
+  }
 
   const createGroup = async ()=>{
-    if(!newName) return
-    await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: newName }), headers: { 'Content-Type': 'application/json' } })
-    setNewName('')
-    mutateGrupos()
+    if(!groupName) return
+    await fetch('/api/grupos', { method: 'POST', body: JSON.stringify({ name: groupName, membros: selectedMembers }), headers: { 'Content-Type': 'application/json' } })
+    setGroupName('')
+    setSelectedMembers([])
   }
 
   const addIndividuo = async ()=>{
-    if(!newIndNome) return
-    await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome: newIndNome, email: newIndEmail, grupo: selectedGroup }), headers: { 'Content-Type': 'application/json' } })
-    setNewIndNome(''); setNewIndEmail('')
-    mutateIndividuos(); mutateGrupos()
-  }
-
-  const toggleMember = async (groupId:string, individuoId:string)=>{
-    await fetch(`/api/grupos/${groupId}`, { method: 'PATCH', body: JSON.stringify({ toggleMember: individuoId }), headers: { 'Content-Type': 'application/json' } })
-    mutateGrupos(); mutateIndividuos()
+    if(!nome) return
+    await fetch('/api/individuos', { method: 'POST', body: JSON.stringify({ nome, telefone, local }), headers: { 'Content-Type': 'application/json' } })
+    setNome(''); setTelefone(''); setLocal('')
   }
 
   return (
@@ -43,45 +43,46 @@ export default function Grupos(){
 
       <Paper sx={{ p:3 }} elevation={1}>
         <Grid container spacing={3}>
+          {/* Groups configuration */}
           <Grid item xs={12} md={6}>
-            {/* Each section gets its own lighter Paper */}
             <Paper sx={{ p:3 }} elevation={1}>
-              <Box component="form" sx={{ display: 'flex', gap:2, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); createGroup() }}>
-                <TextField placeholder="Nome do grupo" fullWidth value={newName} onChange={(e)=>setNewName(e.target.value)} />
+              <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
+
+              <Box sx={{ display:'flex', gap:2, mb:2 }}>
+                <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
                 <Button variant="contained" onClick={createGroup}>Salvar</Button>
               </Box>
 
-              <Box sx={{ mt:3 }}>
-                <List>
-                  {grupos?.map((g:any)=> (
-                    <ListItem key={g.id} selected={selectedGroup===g.id} onClick={()=>setSelectedGroup(g.id)} button>
-                      <ListItemText primary={g.name} secondary={`${g.membros?.length || 0} membros`} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
+              <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
+              <List sx={{ maxHeight:300, overflow:'auto' }}>
+                {individuos?.map((i:any)=> (
+                  <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
+                    <Checkbox checked={selectedMembers.includes(i.id)} />
+                    <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
+                  </ListItem>
+                ))}
+              </List>
             </Paper>
           </Grid>
 
+          {/* Individuals management */}
           <Grid item xs={12} md={6}>
             <Paper sx={{ p:3 }} elevation={1}>
               <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
+
               <Box sx={{ display:'flex', gap:2, mb:2 }}>
-                <TextField placeholder="Nome" value={newIndNome} onChange={(e)=>setNewIndNome(e.target.value)} />
-                <TextField placeholder="Email" value={newIndEmail} onChange={(e)=>setNewIndEmail(e.target.value)} />
-                <Button variant="contained" onClick={addIndividuo}>Adicionar</Button>
+                <TextField placeholder="Nome" value={nome} onChange={(e)=>setNome(e.target.value)} />
+                <TextField placeholder="Telefone" value={telefone} onChange={(e)=>setTelefone(e.target.value)} />
+                <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} />
+                <IconButton color="primary" onClick={addIndividuo} aria-label="adicionar">
+                  <AddIcon />
+                </IconButton>
               </Box>
 
-              <List>
+              <List sx={{ maxHeight:380, overflow:'auto' }}>
                 {individuos?.map((i:any)=> (
-                  <ListItem key={i.id} secondaryAction={
-                    <Tooltip title={selectedGroup && i.grupo===grupos?.find((g:any)=>g.id===selectedGroup)?.name ? 'Remover membro' : 'Adicionar membro'}>
-                      <IconButton edge="end" size="small" onClick={()=>selectedGroup && toggleMember(selectedGroup, i.id)}>
-                        {selectedGroup && i.grupo===grupos?.find((g:any)=>g.id===selectedGroup)?.name ? <RemoveIcon /> : <AddIcon />}
-                      </IconButton>
-                    </Tooltip>
-                  }>
-                    <ListItemText primary={i.nome || i.email} secondary={i.grupo || ''} />
+                  <ListItem key={i.id}>
+                    <ListItemText primary={i.nome || i.email} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
                   </ListItem>
                 ))}
               </List>
