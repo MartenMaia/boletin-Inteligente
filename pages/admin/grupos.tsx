@@ -43,9 +43,9 @@ export default function Grupos(){
 
       <Paper sx={{ p:3 }} elevation={1}>
         <Grid container spacing={3}>
-          {/* Groups configuration */}
+          {/* Groups configuration - use plain Box instead of nested Paper */}
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p:3 }} elevation={1}>
+            <Box sx={{ p:3, borderRadius:1 }}>
               <Typography variant="h6" sx={{ mb:2 }}>Configuração de Grupos</Typography>
 
               <Box sx={{ display:'flex', gap:2, mb:2 }}>
@@ -62,12 +62,12 @@ export default function Grupos(){
                   </ListItem>
                 ))}
               </List>
-            </Paper>
+            </Box>
           </Grid>
 
-          {/* Individuals management */}
+          {/* Individuals management - use plain Box */}
           <Grid item xs={12} md={6}>
-            <Paper sx={{ p:3 }} elevation={1}>
+            <Box sx={{ p:3, borderRadius:1 }}>
               <Typography variant="h6" sx={{ mb:2 }}>Indivíduos</Typography>
 
               <Box sx={{ display:'flex', gap:2, mb:2 }}>
@@ -86,7 +86,7 @@ export default function Grupos(){
                   </ListItem>
                 ))}
               </List>
-            </Paper>
+            </Box>
           </Grid>
         </Grid>
       </Paper>
