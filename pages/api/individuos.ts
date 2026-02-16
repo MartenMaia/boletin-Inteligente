@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if(req.method === 'GET'){
     const individuos = await prisma.groupMember.findMany({ include: { bairro: true, group: true } })
     // normalize response keys for frontend convenience
-    const mapped = individuos.map(i => ({ id: i.id, name: i.name, contact: i.contact, bairroId: i.bairroId, bairroName: i.bairro?.name || null, groupId: i.groupId, groupName: i.group?.name || null }))
+    const mapped = individuos.map((i:any) => ({ id: i.id, name: i.name, contact: i.contact, bairroId: i.bairroId, bairroName: i.bairro?.name || null, groupId: i.groupId, groupName: i.group?.name || null }))
     res.status(200).json(mapped)
   }else if(req.method === 'POST'){
     const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body
