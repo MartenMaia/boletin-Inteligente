@@ -21,12 +21,9 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
 
   return (
     <div>
-      <AppBar position="static" color="transparent" elevation={0} sx={{ mb:2 }}>
+      <AppBar position="static" color="transparent" elevation={0} sx={{ mb:0 }}>
         <Toolbar sx={{ px:0 }}>
           <Typography variant="h6" sx={{ flexGrow: 1 }}>Boletim Inteligente</Typography>
-          <IconButton onClick={toggle} color="inherit" aria-label="toggle theme">
-            {currentMode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
         </Toolbar>
       </AppBar>
 
@@ -76,7 +73,7 @@ export default function AdminLayout({children, themeMode, toggleTheme}:{children
           </Box>
         </Box>
 
-        <Box component="main" sx={{ flex: 1, ml: '260px', p:3 }}>
+        <Box component="main" sx={{ flex: 1, ml: '260px', p:2, pt:2 }}>
           {children}
         </Box>
       </Box>
