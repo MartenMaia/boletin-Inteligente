@@ -55,20 +55,15 @@ export default function BoletinsList({themeMode, toggleTheme}:{themeMode?:string
 
   return (
     <AdminLayout themeMode={themeMode} toggleTheme={toggleTheme}>
-      {/* Page title outside Paper */}
-      <Box sx={{ mb:2 }}>
+      {/* Page title outside Paper with button aligned */}
+      <Box sx={{ mb:2, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <Typography variant="h5">Boletins</Typography>
+        <Box>
+          <Button variant="contained" color="primary" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
+        </Box>
       </Box>
 
       <Paper sx={{ p:3 }}>
-        <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
-          <Box>
-            <Box>
-              <Button variant="contained" color="primary" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
-            </Box>
-          </Box>
-        </Box>
-
         <Box sx={{ display:'flex', gap:2, mb:2 }}>
           <TextField placeholder="Buscar boletins..." size="small" value={query} onChange={(e)=>setQuery(e.target.value)} />
           <TextField select size="small" value={statusFilter||''} onChange={(e)=>setStatusFilter(e.target.value||null)} SelectProps={{displayEmpty:true}} sx={{ width:160 }}>

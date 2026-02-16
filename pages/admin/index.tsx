@@ -33,11 +33,14 @@ export default function AdminHome(){
 
   return (
     <AdminLayout>
-      {/* Page title moved outside Paper */}
-      <Box sx={{ mb:2 }}>
+      {/* Page title moved outside Paper and button aligned with title */}
+      <Box sx={{ mb:2, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <Typography variant="h4" sx={{ display:'flex', alignItems:'center', gap:1 }}>
           <Box component="span" sx={{ fontSize:28, mr:1 }}>👁️</Box> Visão Geral
         </Typography>
+        <Box>
+          <Button variant="contained" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
+        </Box>
       </Box>
 
       <Paper sx={{ p:3 }} elevation={1}>
@@ -51,9 +54,6 @@ export default function AdminHome(){
             </Box>
           </Box>
 
-          <Box>
-            <Button variant="contained" onClick={()=>router.push('/admin/boletins/novo')}>+ Novo Boletim</Button>
-          </Box>
         </Box>
 
         <Divider sx={{ my:3 }} />
