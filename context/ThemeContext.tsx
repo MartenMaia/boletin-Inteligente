@@ -1,5 +1,13 @@
 import React from 'react'
 
-export const ThemeContext = React.createContext<{ mode: 'dark'|'light', toggle: ()=>void } | null>(null)
+interface ThemeContextType {
+  mode: 'dark' | 'light'
+  toggle: () => void
+}
 
-export const useThemeContext = ()=> React.useContext(ThemeContext)
+export const ThemeContext = React.createContext<ThemeContextType>({
+  mode: 'light',
+  toggle: () => {},
+})
+
+export const useThemeContext = () => React.useContext(ThemeContext)
