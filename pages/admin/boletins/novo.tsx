@@ -4,10 +4,13 @@ import useSWR from 'swr'
 import {
   Box, Typography, Paper, TextField, Button, MenuItem,
   Divider, Alert, CircularProgress, Chip, Snackbar,
+  Checkbox, ListItemText, OutlinedInput, Select, FormControl,
+  InputLabel, FormHelperText,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import SaveIcon from '@mui/icons-material/Save'
 import SendIcon from '@mui/icons-material/Send'
+import LocationOnIcon from '@mui/icons-material/LocationOn'
 import AdminLayout from '../../../components/AdminLayout'
 import { useAuth } from '../../../hooks/useAuth'
 
@@ -17,10 +20,12 @@ export default function NovoBoletim() {
   const router = useRouter()
   const { profile } = useAuth()
   const { data: grupos } = useSWR('/api/groups', fetcher)
+  const { data: bairros } = useSWR('/api/bairros', fetcher)
 
   const [title, setTitle] = useState('')
   const [conteudo, setConteudo] = useState('')
   const [grupoId, setGrupoId] = useState('')
+  const [bairroIds, setBairroIds] = useState<string[]>([])
   const [proximoEnvio, setProximoEnvio] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -40,6 +45,7 @@ export default function NovoBoletim() {
           title: title.trim(),
           conteudo: conteudo.trim(),
           grupo_id: grupoId || null,
+          bairro_ids: bairroIds,
           criado_por: profile?.id || null,
           proximo_envio: proximoEnvio || null,
           status: submitStatus,
@@ -60,6 +66,9 @@ export default function NovoBoletim() {
       setLoading(false)
     }
   }
+
+  const bairroNome = (id: string) =>
+    (bairros || []).find((b: any) => b.id === id)?.name ?? id
 
   return (
     <AdminLayout>
@@ -83,6 +92,7 @@ export default function NovoBoletim() {
         {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>{error}</Alert>}
 
         <Paper elevation={0} sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 3, overflow: 'hidden' }}>
+
           {/* Seção: Identificação */}
           <Box sx={{ px: 3, py: 2, bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
             <Typography variant="subtitle2" fontWeight={600} color="text.secondary">IDENTIFICAÇÃO</Typography>
@@ -124,6 +134,51 @@ export default function NovoBoletim() {
                 disabled={loading}
               />
             </Box>
+          </Box>
+
+          <Divider />
+
+          {/* Seção: Bairros */}
+          <Box sx={{ px: 3, py: 2, bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LocationOnIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+            <Typography variant="subtitle2" fontWeight={600} color="text.secondary">BAIRROS / REGIÕES</Typography>
+          </Box>
+          <Divider />
+          <Box sx={{ p: 3 }}>
+            <FormControl fullWidth disabled={loading}>
+              <InputLabel>Bairros abrangidos pelo boletim</InputLabel>
+              <Select
+                multiple
+                value={bairroIds}
+                onChange={(e) => setBairroIds(typeof e.target.value === 'string' ? e.target.value.split(',') : e.target.value as string[])}
+                input={<OutlinedInput label="Bairros abrangidos pelo boletim" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {(selected as string[]).map(id => (
+                      <Chip
+                        key={id}
+                        label={bairroNome(id)}
+                        size="small"
+                        icon={<LocationOnIcon sx={{ fontSize: '14px !important' }} />}
+                        sx={{ height: 22, fontSize: '0.72rem' }}
+                      />
+                    ))}
+                  </Box>
+                )}
+                MenuProps={{ PaperProps: { style: { maxHeight: 280 } } }}
+              >
+                {(bairros || []).map((b: any) => (
+                  <MenuItem key={b.id} value={b.id}>
+                    <Checkbox checked={bairroIds.includes(b.id)} size="small" />
+                    <ListItemText primary={b.name} />
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                Selecione um ou mais bairros para filtrar as informações do boletim.
+                {bairroIds.length > 0 && ` ${bairroIds.length} selecionado${bairroIds.length > 1 ? 's' : ''}.`}
+              </FormHelperText>
+            </FormControl>
           </Box>
 
           <Divider />

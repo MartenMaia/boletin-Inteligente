@@ -15,8 +15,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('boletins')
       .select(`
         id, title, conteudo, status, created_at, updated_at,
-        proximo_envio, data_envio, data_aprovacao,
-        bairro:bairros(id, name),
+        proximo_envio, data_envio, data_aprovacao, bairro_ids,
         grupo:grupos(id, name),
         criador:profiles!criado_por(id, name),
         aprovador:profiles!aprovado_por(id, name)
@@ -35,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const body = req.body && typeof req.body === 'string' ? JSON.parse(req.body) : req.body
-    const { title, conteudo, bairro_id, grupo_id, settings_id, criado_por, proximo_envio } = body
+    const { title, conteudo, bairro_ids, grupo_id, settings_id, criado_por, proximo_envio, status } = body
 
     if (!title || !conteudo) {
       return res.status(400).json({ error: 'title e conteudo são obrigatórios' })
@@ -46,12 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .insert({
         title,
         conteudo,
-        bairro_id: bairro_id || null,
+        bairro_ids: Array.isArray(bairro_ids) ? bairro_ids : [],
         grupo_id: grupo_id || null,
         settings_id: settings_id || null,
         criado_por: criado_por || null,
         proximo_envio: proximo_envio || null,
-        status: 'rascunho',
+        status: status || 'rascunho',
       })
       .select()
       .single()

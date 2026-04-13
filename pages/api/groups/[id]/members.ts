@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('grupo_membros')
-      .select('id, name, contact, bairro:bairros(id, name), created_at')
+      .select('id, cliente_id, name, contact, bairro:bairros(id, name), created_at')
       .eq('grupo_id', grupoId)
       .order('name')
 
@@ -21,8 +21,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { name, contact, bairro_id } = req.body
-    if (!name) return res.status(400).json({ error: 'name é obrigatório' })
+    const { cliente_id, name, contact, bairro_id } = req.body
+
+    // Link an existing cliente by ID
+    if (cliente_id) {
+      const { data: cliente, error: clienteErr } = await supabase
+        .from('clientes')
+        .select('name, phone, bairro_id')
+        .eq('id', cliente_id)
+        .single()
+
+      if (clienteErr || !cliente) return res.status(404).json({ error: 'Cliente não encontrado' })
+
+      const { data, error } = await supabase
+        .from('grupo_membros')
+        .insert({
+          grupo_id: grupoId,
+          cliente_id,
+          name: cliente.name,
+          contact: cliente.phone || null,
+          bairro_id: cliente.bairro_id || null,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        if (error.code === '23505') return res.status(409).json({ error: 'Cliente já é membro deste grupo' })
+        return res.status(500).json({ error: error.message })
+      }
+      return res.status(201).json(data)
+    }
+
+    // Create inline member (not linked to a cliente record)
+    if (!name) return res.status(400).json({ error: 'name ou cliente_id é obrigatório' })
 
     const { data, error } = await supabase
       .from('grupo_membros')

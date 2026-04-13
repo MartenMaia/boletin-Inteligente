@@ -10,7 +10,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('bairros')
-      .select('id, name, association:associations(id, name)')
+      .select('id, name')
       .order('name')
 
     if (error) return res.status(500).json({ error: error.message })
@@ -18,12 +18,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { name, association_id } = req.body
+    const { name } = req.body
     if (!name) return res.status(400).json({ error: 'name é obrigatório' })
 
     const { data, error } = await supabase
       .from('bairros')
-      .insert({ name, association_id: association_id || null })
+      .insert({ name })
       .select()
       .single()
 

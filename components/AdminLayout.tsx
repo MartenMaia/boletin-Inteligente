@@ -7,6 +7,7 @@ import HomeIcon from '@mui/icons-material/Home'
 import ArticleIcon from '@mui/icons-material/Article'
 import PeopleIcon from '@mui/icons-material/People'
 import SettingsIcon from '@mui/icons-material/Settings'
+import RepeatIcon from '@mui/icons-material/Repeat'
 import AddIcon from '@mui/icons-material/Add'
 import LogoutIcon from '@mui/icons-material/Logout'
 import Brightness4Icon from '@mui/icons-material/Brightness4'
@@ -19,10 +20,11 @@ import { useAuth } from '../hooks/useAuth'
 const SIDEBAR_WIDTH = 260
 
 const navItems = [
-  { label: 'Visão Geral',    icon: <HomeIcon />,     path: '/admin' },
-  { label: 'Boletins',       icon: <ArticleIcon />,  path: '/admin/boletins' },
-  { label: 'Grupos',         icon: <PeopleIcon />,   path: '/admin/grupos' },
-  { label: 'Configurações',  icon: <SettingsIcon />, path: '/admin/settings' },
+  { label: 'Visão Geral',    icon: <HomeIcon />,      path: '/admin' },
+  { label: 'Boletins',       icon: <ArticleIcon />,   path: '/admin/boletins' },
+  { label: 'Recorrência',    icon: <RepeatIcon />,    path: '/admin/recorrencia' },
+  { label: 'Grupos',         icon: <PeopleIcon />,    path: '/admin/grupos' },
+  { label: 'Configurações',  icon: <SettingsIcon />,  path: '/admin/settings' },
 ]
 
 const roleLabels: Record<string, string> = {
