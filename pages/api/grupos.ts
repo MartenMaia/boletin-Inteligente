@@ -1,4 +1,6 @@
-// API removed — handled in frontend (localStorage)
-export default function handler(){
-  return new Response(null, { status: 410 })
+import type { NextApiRequest, NextApiResponse } from 'next'
+
+// Endpoint legado — use /api/groups
+export default function handler(_req: NextApiRequest, res: NextApiResponse) {
+  res.status(301).json({ message: 'Endpoint descontinuado. Use /api/groups' })
 }

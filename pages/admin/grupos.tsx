@@ -1,281 +1,325 @@
-import React, { useEffect, useState } from 'react'
-import { Grid, Paper, Typography, Box, TextField, Button, List, ListItem, ListItemText, IconButton, Checkbox, Tabs, Tab, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, CircularProgress } from '@mui/material'
+import React, { useState } from 'react'
+import useSWR, { mutate } from 'swr'
+import {
+  Box, Typography, Paper, Button, Tabs, Tab, Table, TableHead,
+  TableRow, TableCell, TableBody, IconButton, Tooltip, Dialog,
+  DialogTitle, DialogContent, DialogActions, TextField, Checkbox,
+  Chip, Skeleton, Snackbar, Alert, Divider, List, ListItem,
+  ListItemText, ListItemButton, ListItemIcon, CircularProgress,
+  InputAdornment,
+} from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
 import EditIcon from '@mui/icons-material/Edit'
+import PeopleIcon from '@mui/icons-material/People'
+import PersonIcon from '@mui/icons-material/Person'
+import SearchIcon from '@mui/icons-material/Search'
 import AdminLayout from '../../components/AdminLayout'
 
-type Individuo = { id: string, name: string, telefone?: string, email?: string, local?: string, notes?: string }
-type Grupo = { id: string, name: string, membros: string[] }
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
-const LS_KEY_INDIV = 'bi_individuos_v1'
-const LS_KEY_GRUPOS = 'bi_grupos_v1'
+function validateEmail(em: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em.trim())
+}
+function validatePhone(v: string) {
+  const d = v.replace(/\D/g, '')
+  if (d.length === 10) return /^[1-9]{2}\d{8}$/.test(d)
+  if (d.length === 11) return /^[1-9]{2}9\d{8}$/.test(d)
+  return false
+}
+function formatPhone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
 
-export default function Grupos(){
+export default function Grupos() {
   const [tab, setTab] = useState(0)
+  const [search, setSearch] = useState('')
 
-  const [grupos, setGrupos] = useState<Grupo[]>([])
-  const [individuos, setIndividuos] = useState<Individuo[]>([])
-
-  // modal states
-  const [openGroupModal, setOpenGroupModal] = useState(false)
-  const [openIndModal, setOpenIndModal] = useState(false)
-
-  // group form
+  // Grupos
+  const { data: grupos, isLoading: gruposLoading } = useSWR('/api/groups', fetcher)
+  const [groupModal, setGroupModal] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<any>(null)
   const [groupName, setGroupName] = useState('')
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
+  const [groupDesc, setGroupDesc] = useState('')
   const [groupLoading, setGroupLoading] = useState(false)
-  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
 
-  // individual form
+  // Indivíduos (clientes)
+  const { data: clientes, isLoading: clientesLoading } = useSWR('/api/clientes', fetcher)
+  const [clienteModal, setClienteModal] = useState(false)
+  const [clienteLoading, setClienteLoading] = useState(false)
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
   const [email, setEmail] = useState('')
   const [local, setLocal] = useState('')
   const [notes, setNotes] = useState('')
-  const [indLoading, setIndLoading] = useState(false)
 
-  // snackbar
-  const [snack, setSnack] = useState<{open:boolean,message:string,severity?:'success'|'error'}>({open:false,message:'',severity:'success'})
+  // Membros no modal de grupo
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
 
-  useEffect(()=>{
-    // load from localStorage or seed sample data
-    const sInd = localStorage.getItem(LS_KEY_INDIV)
-    const sGrp = localStorage.getItem(LS_KEY_GRUPOS)
-    if(sInd){
-      try{ setIndividuos(JSON.parse(sInd)) }catch(e){ setIndividuos([]) }
-    }else{
-      const seed:Individuo[] = [
-        { id: 'i1', name: 'Ana Silva', telefone: '(11) 99999-0001', local: 'Centro' },
-        { id: 'i2', name: 'João Pereira', telefone: '(11) 98888-0002', local: 'Norte' },
-        { id: 'i3', name: 'Maria Costa', telefone: '(11) 97777-0003', local: 'Sul' }
-      ]
-      setIndividuos(seed)
-      localStorage.setItem(LS_KEY_INDIV, JSON.stringify(seed))
-    }
+  const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' })
+  const showSnack = (message: string, severity: 'success' | 'error' = 'success') => setSnack({ open: true, message, severity })
 
-    if(sGrp){
-      try{ setGrupos(JSON.parse(sGrp)) }catch(e){ setGrupos([]) }
-    }else{
-      const seedG:Grupo[] = [ { id: 'g1', name: 'Equipe Centro', membros: ['i1','i2'] } ]
-      setGrupos(seedG)
-      localStorage.setItem(LS_KEY_GRUPOS, JSON.stringify(seedG))
-    }
-  },[])
-
-  useEffect(()=>{ localStorage.setItem(LS_KEY_INDIV, JSON.stringify(individuos)) },[individuos])
-  useEffect(()=>{ localStorage.setItem(LS_KEY_GRUPOS, JSON.stringify(grupos)) },[grupos])
-
-  const toggleMemberSelection = (id:string)=>{
-    setSelectedMembers(prev => prev.includes(id) ? prev.filter(x=>x!==id) : [...prev, id])
+  // ── Grupos ──────────────────────────────────────────
+  const openNewGroup = () => {
+    setEditingGroup(null)
+    setGroupName('')
+    setGroupDesc('')
+    setSelectedMembers([])
+    setGroupModal(true)
   }
 
-  const handleCreateGroup = async ()=>{
-    if(!groupName) return setSnack({open:true,message:'Nome do grupo obrigatório',severity:'error'})
-    setGroupLoading(true)
-    try{
-      if(editingGroupId){
-        // update existing
-        setGrupos(prev=> prev.map(g => g.id === editingGroupId ? { ...g, name: groupName, membros: selectedMembers } : g))
-        setSnack({open:true,message:`Grupo "${groupName}" atualizado com sucesso`,severity:'success'})
-      }else{
-        const id = 'g' + Date.now()
-        const newG:Grupo = { id, name: groupName, membros: selectedMembers }
-        setGrupos(prev=>[...prev, newG])
-        setSnack({open:true,message:`Grupo "${newG.name}" criado com sucesso`,severity:'success'})
-      }
-      setGroupName('')
-      setSelectedMembers([])
-      setEditingGroupId(null)
-      setOpenGroupModal(false)
-    }catch(e:any){
-      console.error(e)
-      setSnack({open:true,message:'Erro ao criar/atualizar grupo',severity:'error'})
-    }finally{ setGroupLoading(false) }
-  }
-
-  const startEditGroup = (g:Grupo)=>{
-    setEditingGroupId(g.id)
+  const openEditGroup = (g: any) => {
+    setEditingGroup(g)
     setGroupName(g.name)
-    setSelectedMembers(g.membros || [])
-    setOpenGroupModal(true)
+    setGroupDesc(g.description || '')
+    setSelectedMembers((g.members || []).map((m: any) => m.id))
+    setGroupModal(true)
   }
 
-  const validateEmail = (em:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(em||'').trim())
-
-  // Brazilian phone validation (DDD required):
-  // - 10 digits: (DD) NNNN-NNNN (landline)
-  // - 11 digits: (DD) 9NNNN-NNNN (mobile)
-  const validatePhoneBR = (v:string)=>{
-    const d = String(v||'').replace(/\D/g,'')
-    if(d.length === 10){
-      const ddd = d.slice(0,2)
-      return /^[1-9]{2}$/.test(ddd) && /^\d{8}$/.test(d.slice(2))
+  const handleSaveGroup = async () => {
+    if (!groupName.trim()) return showSnack('Nome do grupo é obrigatório', 'error')
+    setGroupLoading(true)
+    try {
+      const url = editingGroup ? `/api/groups/${editingGroup.id}` : '/api/groups'
+      const method = editingGroup ? 'PATCH' : 'POST'
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: groupName.trim(), description: groupDesc.trim() || null }),
+      })
+      if (!res.ok) throw new Error()
+      await mutate('/api/groups')
+      setGroupModal(false)
+      showSnack(editingGroup ? 'Grupo atualizado!' : 'Grupo criado!')
+    } catch {
+      showSnack('Erro ao salvar grupo', 'error')
+    } finally {
+      setGroupLoading(false)
     }
-    if(d.length === 11){
-      const ddd = d.slice(0,2)
-      const rest = d.slice(2)
-      return /^[1-9]{2}$/.test(ddd) && rest[0] === '9' && /^\d{9}$/.test(rest)
+  }
+
+  // ── Clientes ─────────────────────────────────────────
+  const openNewCliente = () => {
+    setNome(''); setTelefone(''); setEmail(''); setLocal(''); setNotes('')
+    setClienteModal(true)
+  }
+
+  const handleSaveCliente = async () => {
+    if (!nome.trim()) return showSnack('Nome é obrigatório', 'error')
+    if (telefone && !validatePhone(telefone)) return showSnack('Telefone inválido. Ex: (11) 91234-5678', 'error')
+    if (email && !validateEmail(email)) return showSnack('E-mail inválido', 'error')
+    setClienteLoading(true)
+    try {
+      const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nome.trim(), phone: telefone || null, email: email || null, notes: notes || null }),
+      })
+      if (!res.ok) throw new Error()
+      await mutate('/api/clientes')
+      setClienteModal(false)
+      showSnack(`"${nome}" cadastrado com sucesso!`)
+    } catch {
+      showSnack('Erro ao cadastrar', 'error')
+    } finally {
+      setClienteLoading(false)
     }
-    return false
   }
 
-  const formatPhone = (v:string)=>{
-    const d = String(v||'').replace(/\D/g,'').slice(0,11)
-    if(d.length <= 2) return d
-    if(d.length <= 6) return `(${d.slice(0,2)}) ${d.slice(2)}`
-    if(d.length <= 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
-    return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7,11)}`
-  }
-
-  const handleCreateInd = async ()=>{
-    if(!nome) return setSnack({open:true,message:'Nome obrigatório',severity:'error'})
-    if(!telefone || !validatePhoneBR(telefone)) return setSnack({open:true,message:'Telefone inválido (inclua DDD). Ex: (11) 91234-5678',severity:'error'})
-    if(!email || !validateEmail(email)) return setSnack({open:true,message:'Email inválido',severity:'error'})
-    setIndLoading(true)
-    try{
-      const id = 'i' + Date.now()
-      const created:Individuo = { id, name: nome, telefone, email, local, notes }
-      setIndividuos(prev=>[created, ...prev])
-      setNome(''); setTelefone(''); setEmail(''); setLocal(''); setNotes('')
-      setOpenIndModal(false)
-      setSnack({open:true,message:`Indivíduo "${created.name}" criado com sucesso`,severity:'success'})
-    }catch(e:any){
-      console.error(e)
-      setSnack({open:true,message:'Erro ao criar indivíduo',severity:'error'})
-    }finally{ setIndLoading(false) }
-  }
-
-  const isMemberSelected = (id:string)=> selectedMembers.includes(id)
+  const filteredGrupos = (grupos || []).filter((g: any) =>
+    !search || g.name.toLowerCase().includes(search.toLowerCase())
+  )
+  const filteredClientes = (clientes || []).filter((c: any) =>
+    !search || c.name.toLowerCase().includes(search.toLowerCase())
+  )
 
   return (
     <AdminLayout>
-      <Box sx={{ mb:2, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <Typography variant="h6">Configuração de Grupos</Typography>
-      </Box>
-
-      <Box sx={{ bgcolor: 'transparent' }}>
-        <Tabs value={tab} onChange={(_,v)=>setTab(v)} sx={{ mb:2, backgroundColor: 'transparent' }} TabIndicatorProps={{ style: { backgroundColor: '#90caf9' } }}>
-          <Tab label="Grupos" sx={{ background: 'transparent' }} />
-          <Tab label="Indivíduos" sx={{ background: 'transparent' }} />
-        </Tabs>
-
-        {tab === 0 && (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
-                <Typography variant="h6">Grupos Cadastrados</Typography>
-                <Button variant="contained" startIcon={groupLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenGroupModal(true)} disabled={groupLoading}>Novo Grupo</Button>
-              </Box>
-
-              <Paper sx={{ p:3 }} elevation={1}>
-                <List sx={{ maxHeight:360, overflow:'auto', px:0, '&::-webkit-scrollbar': { height:8, width:8 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.08)', borderRadius: 8 }, '&::-webkit-scrollbar-track': { background: 'transparent' } }}>
-                  {grupos.map((g)=> (
-                    <ListItem key={g.id} secondaryAction={
-                      <IconButton edge="end" aria-label="editar" onClick={()=>startEditGroup(g)}>
-                        <EditIcon />
-                      </IconButton>
-                    }>
-                      <ListItemText primary={g.name} secondary={`${g.membros.length} membros`} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
-            </Grid>
-          </Grid>
-        )}
-
-        {tab === 1 && (
-          <Grid container spacing={3}>
-            <Grid item xs={12}>
-              <Box sx={{ display:'flex', justifyContent:'space-between', alignItems:'center', mb:2 }}>
-                <Typography variant="h6">Indivíduos Cadastrados</Typography>
-                <Button variant="contained" startIcon={indLoading ? <CircularProgress size={18} color="inherit" /> : <AddIcon />} onClick={()=>setOpenIndModal(true)} disabled={indLoading}>Novo Cadastro</Button>
-              </Box>
-
-              <Paper sx={{ p:3 }} elevation={1}>
-                <List sx={{ maxHeight:420, overflow:'auto', '&::-webkit-scrollbar': { height:8, width:8 }, '&::-webkit-scrollbar-thumb': { background: 'rgba(255,255,255,0.08)', borderRadius: 8 }, '&::-webkit-scrollbar-track': { background: 'transparent' } }}>
-                  {individuos.map((i)=> (
-                    <ListItem key={i.id}>
-                      <ListItemText primary={i.name} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
-            </Grid>
-          </Grid>
-        )}
-
-      </Box>
-
-      {/* Group Modal */}
-      <Dialog open={openGroupModal} onClose={()=>setOpenGroupModal(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Novo Grupo</DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ display:'flex', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateGroup() }}>
-            <TextField placeholder="Nome do grupo" fullWidth value={groupName} onChange={(e)=>setGroupName(e.target.value)} />
+      <Box sx={{ p: 3 }}>
+        {/* Header */}
+        <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <Box>
+            <Typography variant="h5" fontWeight={700}>Grupos</Typography>
+            <Typography variant="body2" color="text.secondary">Gerencie grupos e destinatários dos boletins</Typography>
           </Box>
-          <Typography variant="subtitle2" sx={{ mb:1 }}>Selecione membros</Typography>
-          <List sx={{ maxHeight:300, overflow:'auto' }}>
-            {individuos.map((i)=> (
-              <ListItem key={i.id} button onClick={()=>toggleMemberSelection(i.id)}>
-                <Checkbox checked={isMemberSelected(i.id)} />
-                <ListItemText primary={i.name} secondary={`${i.telefone || ''} ${i.local? '— '+i.local : ''}`} />
-              </ListItem>
-            ))}
-          </List>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={()=>setOpenGroupModal(false)} disabled={groupLoading}>Cancelar</Button>
-          <Button variant="contained" onClick={handleCreateGroup} disabled={groupLoading}>{groupLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Individual Modal */}
-      <Dialog open={openIndModal} onClose={()=>setOpenIndModal(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Novo Indivíduo</DialogTitle>
-        <DialogContent>
-          <Box component="form" sx={{ display:'flex', flexDirection:'column', gap:2, mt:1, mb:2 }} onSubmit={(e)=>{ e.preventDefault(); handleCreateInd() }}>
-            <TextField placeholder="Nome" fullWidth value={nome} onChange={(e)=>setNome(e.target.value)} required />
-            <Box sx={{ display:'flex', gap:2 }}>
-              <TextField
-                placeholder="Telefone"
-                value={telefone}
-                onChange={(e)=>setTelefone(formatPhone(e.target.value))}
-                inputProps={{ inputMode: 'numeric', pattern: "[0-9]*" }}
-                error={!!telefone && !validatePhoneBR(telefone)}
-                helperText={telefone && !validatePhoneBR(telefone) ? 'Use DDD + número válido. Ex: (11) 91234-5678' : ' '}
-                required
-                sx={{ width:200 }}
-              />
-              <TextField
-                placeholder="Email"
-                type="email"
-                value={email}
-                onChange={(e)=>setEmail(e.target.value.replace(/\s/g,'').toLowerCase())}
-                error={!!email && !validateEmail(email)}
-                helperText={email && !validateEmail(email) ? 'Informe um email válido (ex: nome@dominio.com)' : ' '}
-                required
-                sx={{ width:240 }}
-              />
-              <TextField placeholder="Local" value={local} onChange={(e)=>setLocal(e.target.value)} sx={{ width:200 }} />
-            </Box>
-            <TextField placeholder="Observações / Notas" value={notes} onChange={(e)=>setNotes(e.target.value)} multiline rows={3} />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={()=>setOpenIndModal(false)} disabled={indLoading}>Cancelar</Button>
           <Button
             variant="contained"
-            onClick={handleCreateInd}
-            disabled={indLoading || !nome || !validatePhoneBR(telefone) || !validateEmail(email)}
+            startIcon={<AddIcon />}
+            onClick={tab === 0 ? openNewGroup : openNewCliente}
+            sx={{ background: 'linear-gradient(135deg, #0077B6, #00B4D8)', fontWeight: 600, textTransform: 'none', borderRadius: 2 }}
           >
-            {indLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}
+            {tab === 0 ? 'Novo Grupo' : 'Novo Cadastro'}
+          </Button>
+        </Box>
+
+        <Paper elevation={0} sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 3, overflow: 'hidden' }}>
+          {/* Tabs + Busca */}
+          <Box sx={{ px: 3, pt: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+            <Tabs
+              value={tab}
+              onChange={(_, v) => { setTab(v); setSearch('') }}
+              sx={{ '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minHeight: 40 } }}
+            >
+              <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}><PeopleIcon sx={{ fontSize: 18 }} />Grupos {grupos && <Chip label={grupos.length} size="small" sx={{ height: 18, fontSize: '0.65rem', ml: 0.5 }} />}</Box>} />
+              <Tab label={<Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}><PersonIcon sx={{ fontSize: 18 }} />Indivíduos {clientes && <Chip label={clientes.length} size="small" sx={{ height: 18, fontSize: '0.65rem', ml: 0.5 }} />}</Box>} />
+            </Tabs>
+            <TextField
+              size="small" placeholder="Buscar..." value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: 'text.disabled' }} /></InputAdornment> }}
+              sx={{ width: 220 }}
+            />
+          </Box>
+          <Divider sx={{ mt: 1 }} />
+
+          {/* Tab: Grupos */}
+          {tab === 0 && (
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
+                  <TableCell sx={{ fontWeight: 600, py: 1.5, pl: 3 }}>Nome</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Descrição</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Membros</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }} align="right">Ações</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {gruposLoading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>{[1, 2, 3, 4].map(j => <TableCell key={j}><Skeleton /></TableCell>)}</TableRow>
+                  ))
+                  : filteredGrupos.length === 0
+                    ? (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                          <PeopleIcon sx={{ fontSize: 40, color: 'text.disabled', display: 'block', mx: 'auto', mb: 1 }} />
+                          <Typography color="text.secondary">Nenhum grupo encontrado</Typography>
+                        </TableCell>
+                      </TableRow>
+                    )
+                    : filteredGrupos.map((g: any) => (
+                      <TableRow key={g.id} hover>
+                        <TableCell sx={{ pl: 3, fontWeight: 500 }}>{g.name}</TableCell>
+                        <TableCell><Typography variant="body2" color="text.secondary">{g.description || '—'}</Typography></TableCell>
+                        <TableCell>
+                          <Chip label={`${g.members?.length ?? 0} membros`} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 22 }} />
+                        </TableCell>
+                        <TableCell align="right" sx={{ pr: 2 }}>
+                          <Tooltip title="Editar">
+                            <IconButton size="small" onClick={() => openEditGroup(g)}><EditIcon fontSize="small" /></IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                }
+              </TableBody>
+            </Table>
+          )}
+
+          {/* Tab: Indivíduos */}
+          {tab === 1 && (
+            <Table size="small">
+              <TableHead>
+                <TableRow sx={{ bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }}>
+                  <TableCell sx={{ fontWeight: 600, py: 1.5, pl: 3 }}>Nome</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Telefone</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>E-mail</TableCell>
+                  <TableCell sx={{ fontWeight: 600 }}>Local</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {clientesLoading
+                  ? Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>{[1, 2, 3, 4].map(j => <TableCell key={j}><Skeleton /></TableCell>)}</TableRow>
+                  ))
+                  : filteredClientes.length === 0
+                    ? (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                          <PersonIcon sx={{ fontSize: 40, color: 'text.disabled', display: 'block', mx: 'auto', mb: 1 }} />
+                          <Typography color="text.secondary">Nenhum indivíduo cadastrado</Typography>
+                        </TableCell>
+                      </TableRow>
+                    )
+                    : filteredClientes.map((c: any) => (
+                      <TableRow key={c.id} hover>
+                        <TableCell sx={{ pl: 3, fontWeight: 500 }}>{c.name}</TableCell>
+                        <TableCell><Typography variant="body2" color="text.secondary">{c.phone || '—'}</Typography></TableCell>
+                        <TableCell><Typography variant="body2" color="text.secondary">{c.email || '—'}</Typography></TableCell>
+                        <TableCell><Typography variant="body2" color="text.secondary">{c.bairro?.name || '—'}</Typography></TableCell>
+                      </TableRow>
+                    ))
+                }
+              </TableBody>
+            </Table>
+          )}
+        </Paper>
+      </Box>
+
+      {/* Modal Grupo */}
+      <Dialog open={groupModal} onClose={() => setGroupModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>{editingGroup ? 'Editar Grupo' : 'Novo Grupo'}</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ pt: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField label="Nome do grupo *" fullWidth value={groupName} onChange={(e) => setGroupName(e.target.value)} autoFocus />
+            <TextField label="Descrição" fullWidth value={groupDesc} onChange={(e) => setGroupDesc(e.target.value)} multiline rows={2} />
+          </Box>
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setGroupModal(false)} disabled={groupLoading} sx={{ textTransform: 'none' }}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSaveGroup} disabled={groupLoading || !groupName.trim()}
+            sx={{ background: 'linear-gradient(135deg, #0077B6, #00B4D8)', textTransform: 'none' }}>
+            {groupLoading ? <CircularProgress size={18} color="inherit" /> : 'Salvar'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snack.open} autoHideDuration={3000} onClose={()=>setSnack(s=>({...s,open:false}))} message={snack.message} />
+      {/* Modal Cliente */}
+      <Dialog open={clienteModal} onClose={() => setClienteModal(false)} fullWidth maxWidth="sm">
+        <DialogTitle sx={{ fontWeight: 700 }}>Novo Indivíduo</DialogTitle>
+        <Divider />
+        <DialogContent sx={{ pt: 2.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <TextField label="Nome *" fullWidth value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                label="Telefone" value={telefone}
+                onChange={(e) => setTelefone(formatPhone(e.target.value))}
+                error={!!telefone && !validatePhone(telefone)}
+                helperText={telefone && !validatePhone(telefone) ? 'Ex: (11) 91234-5678' : ''}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="E-mail" type="email" value={email}
+                onChange={(e) => setEmail(e.target.value.trim())}
+                error={!!email && !validateEmail(email)}
+                helperText={email && !validateEmail(email) ? 'E-mail inválido' : ''}
+                sx={{ flex: 1 }}
+              />
+            </Box>
+            <TextField label="Local / Bairro" fullWidth value={local} onChange={(e) => setLocal(e.target.value)} />
+            <TextField label="Observações" fullWidth multiline rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          </Box>
+        </DialogContent>
+        <Divider />
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button onClick={() => setClienteModal(false)} disabled={clienteLoading} sx={{ textTransform: 'none' }}>Cancelar</Button>
+          <Button variant="contained" onClick={handleSaveCliente}
+            disabled={clienteLoading || !nome.trim() || (!!telefone && !validatePhone(telefone)) || (!!email && !validateEmail(email))}
+            sx={{ background: 'linear-gradient(135deg, #0077B6, #00B4D8)', textTransform: 'none' }}>
+            {clienteLoading ? <CircularProgress size={18} color="inherit" /> : 'Cadastrar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
+      <Snackbar open={snack.open} autoHideDuration={3500} onClose={() => setSnack(s => ({ ...s, open: false }))}>
+        <Alert severity={snack.severity} variant="filled">{snack.message}</Alert>
+      </Snackbar>
     </AdminLayout>
   )
 }

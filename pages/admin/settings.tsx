@@ -1,269 +1,158 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import useSWR from 'swr'
+import {
+  Box, Typography, Paper, Tabs, Tab, Divider, TextField,
+  MenuItem, Alert, Chip, Grid, Skeleton,
+} from '@mui/material'
+import WaterIcon from '@mui/icons-material/Water'
+import SecurityIcon from '@mui/icons-material/Security'
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar'
+import DashboardIcon from '@mui/icons-material/Dashboard'
 import AdminLayout from '../../components/AdminLayout'
-import { Box, Typography, Tabs, Tab, Paper, Grid, TextField, Alert } from '@mui/material'
 
-const LS_KEY = 'bi_indicadores_filtros_v1'
+const fetcher = (url: string) => fetch(url).then(r => r.json())
 
-type Filters = {
-  cidade: string
-  bairro: string
+// Bairros de Florianópolis como fallback
+const FLORIPA_BAIRROS = [
+  'Abraão','Açores','Agronômica','Alto Ribeirão','Alto Ribeirão Leste','Armação',
+  'Autódromo','Balneário','Barra da Lagoa','Barra do Sambaqui','Base Aérea',
+  'Bom Abrigo','Cachoeira do Bom Jesus','Cachoeira do Bom Jesus Leste','Cacupé',
+  'Caiacanga','Caieira','Campeche Central','Campeche Leste','Campeche Norte',
+  'Campeche Sul','Canasvieiras','Canto','Canto da Lagoa','Canto do Lamim',
+  'Canto dos Araçás','Capoeiras','Carianos','Centro','Coloninha','Córrego Grande',
+  'Coqueiros','Costeira do Pirajubaé','Costeiro do Ribeirão','Daniela',
+  'Dunas da Lagoa','Estreito','Forte','Ingleses Centro','Ingleses Norte',
+  'Ingleses Sul','Itacorubi','Itaguaçu','Jardim Atlântico','João Paulo',
+  'José Mendes','Jurerê','Jurere Leste','Jurere Oeste','Lagoa','Lagoa Pequena',
+  'Lagoinha do Norte','Moenda','Monte Cristo','Monte Verde','Morro das Pedras',
+  'Morro do Peralta','Pantanal','Pântano do Sul','Pedrita','Ponta das Canas',
+  'Porto da Lagoa','Praia Brava','Praia Mole','Ratones','Recanto dos Açores',
+  'Ressacada','Retiro','Ribeirão da Ilha','Rio Tavares Central',
+  'Rio Tavares do Norte','Rio das Pacas','Rio Vermelho','Saco Grande',
+  'Saco dos Limões','Sambaqui','Santa Mônica','Santinho','Santo Antônio',
+  'Tapera','Tapera da Base','Trindade','Vargem de Fora','Vargem do Bom Jesus',
+  'Vargem Grande','Vargem Pequena',
+].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+const TABS = [
+  { label: 'Resumo Geral', icon: <DashboardIcon sx={{ fontSize: 18 }} /> },
+  { label: 'Balneabilidade', icon: <WaterIcon sx={{ fontSize: 18 }} /> },
+  { label: 'Segurança', icon: <SecurityIcon sx={{ fontSize: 18 }} /> },
+  { label: 'Movimentação', icon: <DirectionsCarIcon sx={{ fontSize: 18 }} /> },
+]
+
+function ComingSoon({ label }: { label: string }) {
+  return (
+    <Box sx={{ py: 8, textAlign: 'center' }}>
+      <Typography variant="h6" color="text.disabled" gutterBottom>{label}</Typography>
+      <Chip label="Em breve" variant="outlined" color="info" />
+      <Typography variant="body2" color="text.disabled" sx={{ mt: 1 }}>
+        Esta seção está sendo desenvolvida.
+      </Typography>
+    </Box>
+  )
 }
 
-type Bairro = { id: number; name: string }
+export default function Settings() {
+  const [tab, setTab] = useState(0)
+  const [bairro, setBairro] = useState('Todos')
+  const [bairrosList, setBairrosList] = useState<string[]>(['Todos', ...FLORIPA_BAIRROS])
+  const [bairrosError, setBairrosError] = useState(false)
 
-const CIDADE_DEFAULT = 'Florianópolis'
-
-// Fallback list (from Wikipedia: Lista de distritos e bairros de Florianópolis)
-// Source: https://pt.wikipedia.org/wiki/Lista_de_distritos_e_bairros_de_Florian%C3%B3polis
-const FLORIPA_BAIRROS: string[] = [
-  'Centro',
-  'Capivari',
-  'Rio Vermelho',
-  'Itacorubi',
-  'Trindade',
-  'Capoeiras',
-  'Agronômica',
-  'Saco dos Limões',
-  'Coqueiros',
-  'Jardim Atlântico',
-  'Córrego Grande',
-  'Tapera da Base',
-  'Canasvieiras',
-  'Monte Cristo',
-  'Costeira do Pirajubaé',
-  'Saco Grande',
-  'Estreito',
-  'Ingleses Centro',
-  'Abraão',
-  'Pantanal',
-  'Campeche Sul',
-  'Monte Verde',
-  'Campeche Central',
-  'Canto',
-  'Campeche Leste',
-  'João Paulo',
-  'Rio Tavares Central',
-  'Barra da Lagoa',
-  'Balneário',
-  'Vargem do Bom Jesus',
-  'Carianos',
-  'Jurere Leste',
-  'Campeche Norte',
-  'Lagoa',
-  'Cachoeira do Bom Jesus Leste',
-  'Santinho',
-  'Vargem Grande',
-  'Coloninha',
-  'Alto Ribeirão Leste',
-  'Ponta das Canas',
-  'Ressacada',
-  'Armação',
-  'Pântano do Sul',
-  'José Mendes',
-  'Ingleses Sul',
-  'Morro das Pedras',
-  'Lagoa Pequena',
-  'Alto Ribeirão',
-  'Rio Tavares do Norte',
-  'Cachoeira do Bom Jesus',
-  'Jurere Oeste',
-  'Moenda',
-  'Vargem de Fora',
-  'Ingleses Norte',
-  'Santo Antônio',
-  'Porto da Lagoa',
-  'Barra do Sambaqui',
-  'Sambaqui',
-  'Itaguaçu',
-  'Ratones',
-  'Ribeirão da Ilha',
-  'Açores',
-  'Cacupé',
-  'Santa Mônica',
-  'Bom Abrigo',
-  'Autódromo',
-  'Vargem Pequena',
-  'Morro do Peralta',
-  'Retiro',
-  'Daniela',
-  'Canto da Lagoa',
-  'Pedrita',
-  'Jurerê',
-  'Caiacanga',
-  'Tapera',
-  'Costeiro do Ribeirão',
-  'Lagoinha do Norte',
-  'Recanto dos Açores',
-  'Base Aérea',
-  'Canto do Lamim',
-  'Canto dos Araçás',
-  'Dunas da Lagoa',
-  'Praia Brava',
-  'Caieira',
-  'Rio das Pacas',
-  'Praia Mole',
-  'Forte'
-].sort((a,b)=>a.localeCompare(b,'pt-BR'))
-
-function TabPanel({ value, index, children }:{ value:number, index:number, children:React.ReactNode }){
-  if(value !== index) return null
-  return <Box sx={{ mt:2 }}>{children}</Box>
-}
-
-export default function Settings(){
-  const [tab, setTab] = React.useState(0)
-  const [bairros, setBairros] = React.useState<string[]>(['Todos', ...FLORIPA_BAIRROS])
-  const [bairrosLoading, setBairrosLoading] = React.useState(false)
-  const [bairrosError, setBairrosError] = React.useState<string | null>(null)
-
-  const [filters, setFilters] = React.useState<Filters>(()=>{
-    try{
-      const raw = localStorage.getItem(LS_KEY)
-      if(raw) return JSON.parse(raw)
-    }catch(e){}
-    return { cidade: CIDADE_DEFAULT, bairro: 'Todos' }
-  })
-
-  React.useEffect(()=>{
-    try{ localStorage.setItem(LS_KEY, JSON.stringify(filters)) }catch(e){}
-  },[filters])
-
-  // Try to load bairros from backend (DB). If unavailable/empty, keep the baked-in Florianópolis list.
-  React.useEffect(()=>{
-    let mounted = true
-    setBairrosLoading(true)
-    setBairrosError(null)
-    ;(async ()=>{
-      try{
-        const res = await fetch('/api/bairros')
-        if(!res.ok) throw new Error('Falha ao carregar bairros do servidor')
-        const data = (await res.json()) as Bairro[]
-        const names = Array.from(new Set((data||[]).map(b=>String(b.name).trim()).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'pt-BR'))
-        if(mounted && names.length){
-          setBairros(['Todos', ...names])
-        }
-      }catch(e:any){
-        // fallback is already set; show warning for visibility
-        if(mounted){
-          setBairrosError(e?.message || 'Usando lista local de bairros (fallback)')
-        }
-      }finally{
-        if(mounted) setBairrosLoading(false)
-      }
-    })()
-    return ()=>{ mounted = false }
-  },[])
-
-  const cidades = [CIDADE_DEFAULT]
-
-  const setCidade = (cidade:string)=>{
-    // for now we only support Florianópolis; keep the filter consistent
-    setFilters(prev=>({ ...prev, cidade, bairro: 'Todos' }))
-  }
-
-  const setBairro = (bairro:string)=>{
-    setFilters(prev=>({ ...prev, bairro }))
-  }
+  useEffect(() => {
+    fetch('/api/bairros')
+      .then(r => r.json())
+      .then((data: any[]) => {
+        const names = [...new Set(data.map(b => b.name).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+        if (names.length) setBairrosList(['Todos', ...names])
+      })
+      .catch(() => setBairrosError(true))
+  }, [])
 
   return (
     <AdminLayout>
-      <Box sx={{ mb:2 }}>
-        <Typography variant="h5">Indicadores</Typography>
-      </Box>
+      <Box sx={{ p: 3 }}>
+        {/* Header */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h5" fontWeight={700}>Configurações e Indicadores</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Acompanhe indicadores por cidade e bairro
+          </Typography>
+        </Box>
 
-      <Box sx={{ bgcolor:'transparent' }}>
-        <Tabs value={tab} onChange={(_,v)=>setTab(v)} sx={{ mb:2, backgroundColor:'transparent' }}>
-          <Tab label="Resumo Geral" />
-          <Tab label="Balneabilidade" />
-          <Tab label="Segurança" />
-          <Tab label="Movimentação" />
-        </Tabs>
+        <Paper elevation={0} sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 3, overflow: 'hidden' }}>
+          {/* Tabs */}
+          <Box sx={{ px: 3, pt: 1 }}>
+            <Tabs
+              value={tab}
+              onChange={(_, v) => setTab(v)}
+              sx={{ '& .MuiTab-root': { textTransform: 'none', fontWeight: 600, minHeight: 48 } }}
+            >
+              {TABS.map((t, i) => (
+                <Tab
+                  key={i}
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.8 }}>
+                      {t.icon}{t.label}
+                    </Box>
+                  }
+                />
+              ))}
+            </Tabs>
+          </Box>
+          <Divider />
 
-        <TabPanel value={tab} index={0}>
-          <Paper sx={{ p:3 }} elevation={1}>
-            <Typography variant="h6" sx={{ mb:2 }}>Resumo Geral</Typography>
-            <Typography variant="body2" sx={{ opacity:0.85, mb:2 }}>
-              Use os filtros abaixo para definir o recorte (Cidade/Bairro) que será aplicado nas demais abas.
-            </Typography>
-
+          {/* Filtros globais */}
+          <Box sx={{ px: 3, py: 2.5, display: 'flex', gap: 2, alignItems: 'flex-end', flexWrap: 'wrap', bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.01)' }}>
+            <TextField select label="Cidade" value="Florianópolis" size="small" sx={{ width: 200 }}>
+              <MenuItem value="Florianópolis">Florianópolis</MenuItem>
+            </TextField>
+            <TextField
+              select label="Bairro" value={bairro}
+              onChange={(e) => setBairro(e.target.value)}
+              size="small" sx={{ width: 220 }}
+            >
+              {bairrosList.map(b => <MenuItem key={b} value={b}>{b}</MenuItem>)}
+            </TextField>
             {bairrosError && (
-              <Alert severity="warning" sx={{ mb:2 }}>
-                {bairrosError}
-              </Alert>
+              <Typography variant="caption" color="text.secondary">
+                ⚠️ Usando lista local
+              </Typography>
             )}
+          </Box>
+          <Divider />
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Cidade"
-                  value={filters.cidade}
-                  onChange={(e)=>setCidade(String(e.target.value))}
-                  SelectProps={{ native: true }}
-                >
-                  {cidades.map(c=>(
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </TextField>
+          {/* Conteúdo das abas */}
+          <Box sx={{ p: 3 }}>
+            {tab === 0 && (
+              <Grid container spacing={3}>
+                {[
+                  { label: 'Boletins enviados hoje', value: '—', color: '#0077B6' },
+                  { label: 'Bairros monitorados', value: bairrosList.length - 1, color: '#7B2D8B' },
+                  { label: 'Alertas ativos', value: '—', color: '#B45309' },
+                  { label: 'Última atualização', value: 'Agora', color: '#1B8A4A' },
+                ].map((stat) => (
+                  <Grid item xs={12} sm={6} md={3} key={stat.label}>
+                    <Paper elevation={0} sx={{ p: 2.5, borderRadius: 2, border: (t) => `1px solid ${t.palette.divider}` }}>
+                      <Typography variant="caption" color="text.secondary">{stat.label}</Typography>
+                      <Typography variant="h4" fontWeight={700} sx={{ color: stat.color, mt: 0.5 }}>
+                        {stat.value}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                ))}
+                <Grid item xs={12}>
+                  <Alert severity="info" sx={{ borderRadius: 2 }}>
+                    Filtro ativo: <strong>Florianópolis — {bairro}</strong>. As demais abas exibirão dados filtrados por este recorte quando implementadas.
+                  </Alert>
+                </Grid>
               </Grid>
-
-              <Grid item xs={12} md={4}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Bairro"
-                  value={filters.bairro}
-                  onChange={(e)=>setBairro(String(e.target.value))}
-                  SelectProps={{ native: true }}
-                  disabled={bairrosLoading}
-                  helperText={bairrosLoading ? 'Carregando bairros…' : ' '}
-                >
-                  {bairros.map(b=>(
-                    <option key={b} value={b}>{b}</option>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} md={4}>
-                <Paper sx={{ p:2, bgcolor:'rgba(255,255,255,0.03)' }} elevation={0}>
-                  <Typography variant="subtitle2">Filtro atual</Typography>
-                  <Typography variant="body2" sx={{ mt:0.5 }}>
-                    Cidade: <b>{filters.cidade}</b><br />
-                    Bairro: <b>{filters.bairro}</b>
-                  </Typography>
-                </Paper>
-              </Grid>
-            </Grid>
-          </Paper>
-        </TabPanel>
-
-        <TabPanel value={tab} index={1}>
-          <Paper sx={{ p:3 }} elevation={1}>
-            <Typography variant="h6" sx={{ mb:1 }}>Balneabilidade</Typography>
-            <Typography variant="body2" sx={{ opacity:0.85 }}>
-              Em breve. Recorte atual: <b>{filters.cidade}</b> / <b>{filters.bairro}</b>.
-            </Typography>
-          </Paper>
-        </TabPanel>
-
-        <TabPanel value={tab} index={2}>
-          <Paper sx={{ p:3 }} elevation={1}>
-            <Typography variant="h6" sx={{ mb:1 }}>Segurança</Typography>
-            <Typography variant="body2" sx={{ opacity:0.85 }}>
-              Em breve. Recorte atual: <b>{filters.cidade}</b> / <b>{filters.bairro}</b>.
-            </Typography>
-          </Paper>
-        </TabPanel>
-
-        <TabPanel value={tab} index={3}>
-          <Paper sx={{ p:3 }} elevation={1}>
-            <Typography variant="h6" sx={{ mb:1 }}>Movimentação</Typography>
-            <Typography variant="body2" sx={{ opacity:0.85 }}>
-              Em breve. Recorte atual: <b>{filters.cidade}</b> / <b>{filters.bairro}</b>.
-            </Typography>
-          </Paper>
-        </TabPanel>
+            )}
+            {tab === 1 && <ComingSoon label="Balneabilidade" />}
+            {tab === 2 && <ComingSoon label="Segurança" />}
+            {tab === 3 && <ComingSoon label="Movimentação" />}
+          </Box>
+        </Paper>
       </Box>
     </AdminLayout>
   )

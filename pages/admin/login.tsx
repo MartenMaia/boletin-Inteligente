@@ -139,20 +139,20 @@ export default function AdminLogin() {
                 {/* Usuários de teste */}
                 <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                   <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                    <strong>Usuários de teste</strong> (senha: Teste@123)
+                    <strong>Usuários de teste</strong> (senha: Boletim@2026)
                   </Typography>
                   {[
-                    { label: 'Admin', email: 'admin@boletim.test' },
-                    { label: 'Editor', email: 'editor@boletim.test' },
-                    { label: 'Aprovador', email: 'aprovador@boletim.test' },
-                    { label: 'Viewer', email: 'viewer@boletim.test' },
+                    { label: 'Admin', email: 'admin@boletim.com' },
+                    { label: 'Editor', email: 'editor@boletim.com' },
+                    { label: 'Aprovador', email: 'aprovador@boletim.com' },
+                    { label: 'Viewer', email: 'viewer@boletim.com' },
                   ].map((u) => (
                     <Button
                       key={u.email}
                       size="small"
                       variant="outlined"
                       sx={{ mr: 0.5, mb: 0.5, fontSize: '0.7rem' }}
-                      onClick={() => { setEmail(u.email); setPassword('Teste@123') }}
+                      onClick={() => { setEmail(u.email); setPassword('Boletim@2026') }}
                     >
                       {u.label}
                     </Button>
