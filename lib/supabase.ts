@@ -16,6 +16,8 @@ export interface UserProfile {
   email: string | null
   role: UserRole
   avatar_url: string | null
+  ativo: boolean
+  inativado_em: string | null
   created_at: string
   updated_at: string
 }
