@@ -193,7 +193,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const canais: string[] = boletim.canais_envio || []
   if (canais.length === 0) return res.status(400).json({ error: 'Nenhum canal de envio configurado neste boletim' })
 
-  const members: any[] = boletim.grupo?.members || []
+  const grupo = Array.isArray(boletim.grupo) ? boletim.grupo[0] : boletim.grupo as any
+  const members: any[] = grupo?.members || []
   const resultados: { canal: string; enviados: number; erros: string[] }[] = []
 
   // 2. Para cada canal configurado no boletim

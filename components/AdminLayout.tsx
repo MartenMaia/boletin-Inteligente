@@ -328,11 +328,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               )
             })}
           </List>
+        </Box>
 
+        {/* Novo Boletim — fixo acima do usuário */}
+        <Box sx={{ px: 2, pb: 2 }}>
           <Button
             variant="contained" fullWidth startIcon={<AddIcon />}
             sx={{
-              mt: 3,
               background: 'linear-gradient(135deg, #0077B6, #00B4D8)',
               color: 'white', borderRadius: 2, fontWeight: 600, textTransform: 'none',
               boxShadow: '0 2px 8px rgba(0,119,182,0.3)',
