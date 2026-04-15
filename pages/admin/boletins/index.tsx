@@ -10,9 +10,11 @@ import {
 import EditIcon from '@mui/icons-material/Edit'
 import CheckCircleIcon from '@mui/icons-material/CheckCircle'
 import DeleteIcon from '@mui/icons-material/Delete'
+import SendIcon from '@mui/icons-material/Send'
 import SearchIcon from '@mui/icons-material/Search'
 import AddIcon from '@mui/icons-material/Add'
 import ArticleIcon from '@mui/icons-material/Article'
+import VisibilityIcon from '@mui/icons-material/Visibility'
 import AdminLayout from '../../../components/AdminLayout'
 import { formatDateShort, formatDateFull } from '../../../utils/date'
 import { useAuth } from '../../../hooks/useAuth'
@@ -53,12 +55,14 @@ export default function BoletinsList() {
   const [statusFilter, setStatusFilter] = useState('')
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null)
   const [confirmApprove, setConfirmApprove] = useState<string | null>(null)
+  const [confirmSend, setConfirmSend] = useState<string | null>(null)
   const [loadingId, setLoadingId] = useState<string | null>(null)
   const [snack, setSnack] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' })
 
-  const canApprove = profile?.role === 'admin' || profile?.role === 'aprovador'
-  const canDelete = profile?.role === 'admin'
-  const canCreate = profile?.role === 'admin' || profile?.role === 'editor'
+  const canApprove = profile?.role === 'admin' || profile?.role === 'aprovador' || profile?.role === 'suporte'
+  const canDelete = profile?.role === 'admin' || profile?.role === 'suporte'
+  const canCreate = profile?.role === 'admin' || profile?.role === 'aprovador' || profile?.role === 'suporte'
+  const canSend = profile?.role === 'admin' || profile?.role === 'suporte'
 
   const filtered = (boletins || []).filter((b: any) => {
     if (search && !b.title?.toLowerCase().includes(search.toLowerCase())) return false
@@ -98,6 +102,30 @@ export default function BoletinsList() {
       }
     } finally {
       setConfirmApprove(null)
+      setLoadingId(null)
+    }
+  }
+
+  const handleSend = async (id: string) => {
+    setLoadingId(id)
+    try {
+      const res = await fetch('/api/envio/enviar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ boletim_id: id }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await mutate('/api/boletins')
+        const msg = data.avisos?.length
+          ? `Enviado (${data.total_enviados} destinatário(s)). Avisos: ${data.avisos.join('; ')}`
+          : `Boletim enviado para ${data.total_enviados} destinatário(s)!`
+        setSnack({ open: true, message: msg, severity: data.avisos?.length ? 'error' : 'success' })
+      } else {
+        setSnack({ open: true, message: data.error || 'Erro ao enviar o boletim', severity: 'error' })
+      }
+    } finally {
+      setConfirmSend(null)
       setLoadingId(null)
     }
   }
@@ -220,24 +248,42 @@ export default function BoletinsList() {
                         />
                       </TableCell>
                       <TableCell align="right" sx={{ pr: 2 }}>
-                        <Tooltip title="Revisar / Editar">
-                          <IconButton size="small" onClick={() => router.push(`/admin/boletins/${b.id}/revisao`)}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        {canApprove && b.status === 'aguardando_revisao' && (
-                          <Tooltip title="Aprovar">
-                            <IconButton size="small" color="success" disabled={!!loadingId} onClick={() => setConfirmApprove(b.id)}>
-                              <CheckCircleIcon fontSize="small" />
+                        {b.status === 'enviado' ? (
+                          /* Boletim enviado: apenas botão de visualização */
+                          <Tooltip title="Visualizar boletim enviado">
+                            <IconButton size="small" color="primary" onClick={() => router.push(`/admin/boletins/${b.id}/visualizar`)}>
+                              <VisibilityIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                        )}
-                        {canDelete && (
-                          <Tooltip title="Excluir">
-                            <IconButton size="small" color="error" disabled={!!loadingId} onClick={() => setConfirmDelete(b.id)}>
-                              <DeleteIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                        ) : (
+                          <>
+                            <Tooltip title="Revisar / Editar">
+                              <IconButton size="small" onClick={() => router.push(`/admin/boletins/${b.id}/revisao`)}>
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            {canApprove && b.status === 'aguardando_revisao' && (
+                              <Tooltip title="Aprovar">
+                                <IconButton size="small" color="success" disabled={!!loadingId} onClick={() => setConfirmApprove(b.id)}>
+                                  <CheckCircleIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {canSend && b.status === 'aprovado' && (
+                              <Tooltip title="Enviar manualmente">
+                                <IconButton size="small" color="primary" disabled={!!loadingId} onClick={() => setConfirmSend(b.id)}>
+                                  <SendIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {canDelete && (
+                              <Tooltip title="Excluir">
+                                <IconButton size="small" color="error" disabled={!!loadingId} onClick={() => setConfirmDelete(b.id)}>
+                                  <DeleteIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
@@ -264,6 +310,21 @@ export default function BoletinsList() {
         <DialogActions>
           <Button onClick={() => setConfirmApprove(null)}>Cancelar</Button>
           <Button color="success" variant="contained" onClick={() => confirmApprove && handleApprove(confirmApprove)}>Aprovar</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!confirmSend} onClose={() => setConfirmSend(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Enviar boletim?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            O boletim será marcado como <strong>enviado</strong> manualmente. Esta ação indica que o envio foi realizado.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmSend(null)}>Cancelar</Button>
+          <Button color="primary" variant="contained" startIcon={<SendIcon />} onClick={() => confirmSend && handleSend(confirmSend)}>
+            Confirmar Envio
+          </Button>
         </DialogActions>
       </Dialog>
 

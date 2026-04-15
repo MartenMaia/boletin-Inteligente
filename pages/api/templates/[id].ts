@@ -14,7 +14,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('boletim_templates')
       .select(`
         id, title_template, conteudo, recorrencia, dias_semana, dia_mes,
-        horas_validacao, ativo, bairro_ids, ultimo_gerado_em, created_at,
+        horas_validacao, hora_envio, canais_envio, ativo, bairro_ids,
+        ultimo_gerado_em, created_at,
         grupo:grupos(id, name),
         criador:profiles!criado_por(id, name)
       `)
@@ -27,20 +28,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'PATCH') {
     const {
-      title_template, conteudo, grupo_id, bairro_ids,
-      recorrencia, dias_semana, dia_mes, horas_validacao, ativo,
+      title_template, conteudo, grupo_id, bairro_ids, canais_envio,
+      recorrencia, dias_semana, dia_mes, horas_validacao, hora_envio, ativo,
     } = req.body
 
     const updates: Record<string, any> = { updated_at: new Date().toISOString() }
-    if (title_template !== undefined) updates.title_template = title_template
-    if (conteudo       !== undefined) updates.conteudo       = conteudo || null
-    if (grupo_id       !== undefined) updates.grupo_id       = grupo_id || null
-    if (bairro_ids     !== undefined) updates.bairro_ids     = Array.isArray(bairro_ids) ? bairro_ids : []
-    if (recorrencia    !== undefined) updates.recorrencia    = recorrencia
-    if (dias_semana    !== undefined) updates.dias_semana    = Array.isArray(dias_semana) ? dias_semana : []
-    if (dia_mes        !== undefined) updates.dia_mes        = dia_mes || null
+    if (title_template  !== undefined) updates.title_template  = title_template
+    if (conteudo        !== undefined) updates.conteudo        = conteudo || null
+    if (grupo_id        !== undefined) updates.grupo_id        = grupo_id || null
+    if (bairro_ids      !== undefined) updates.bairro_ids      = Array.isArray(bairro_ids)   ? bairro_ids   : []
+    if (canais_envio    !== undefined) updates.canais_envio    = Array.isArray(canais_envio) ? canais_envio : []
+    if (recorrencia     !== undefined) updates.recorrencia     = recorrencia
+    if (dias_semana     !== undefined) updates.dias_semana     = Array.isArray(dias_semana)  ? dias_semana  : []
+    if (dia_mes         !== undefined) updates.dia_mes         = dia_mes || null
     if (horas_validacao !== undefined) updates.horas_validacao = horas_validacao
-    if (ativo          !== undefined) updates.ativo          = ativo
+    if (hora_envio      !== undefined) updates.hora_envio      = hora_envio
+    if (ativo           !== undefined) updates.ativo           = ativo
 
     const { data, error } = await supabase
       .from('boletim_templates')

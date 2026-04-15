@@ -8,7 +8,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 
 // Tipos auxiliares de profile
-export type UserRole = 'admin' | 'editor' | 'aprovador' | 'viewer'
+export type UserRole = 'admin' | 'aprovador' | 'suporte' | 'viewer'
 
 export interface UserProfile {
   id: string

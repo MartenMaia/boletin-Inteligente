@@ -121,14 +121,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('boletins')
       .insert({
         title:           titulo,
-        conteudo:        template.conteudo || '',
-        grupo_id:        template.grupo_id       || null,
-        bairro_ids:      template.bairro_ids     || [],
+        conteudo:        template.conteudo        || '',
+        grupo_id:        template.grupo_id        || null,
+        bairro_ids:      template.bairro_ids      || [],
+        canais_envio:    template.canais_envio    || [],
         template_id:     template.id,
         horas_validacao: template.horas_validacao,
         validade_ate:    validadeAte.toISOString(),
         status:          'aguardando_revisao',
-        criado_por:      template.criado_por     || null,
+        criado_por:      template.criado_por      || null,
       })
       .select('id, title')
       .single()

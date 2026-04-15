@@ -12,7 +12,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('boletim_templates')
       .select(`
         id, title_template, conteudo, recorrencia, dias_semana, dia_mes,
-        horas_validacao, ativo, bairro_ids, ultimo_gerado_em, created_at,
+        horas_validacao, hora_envio, canais_envio, ativo, bairro_ids,
+        ultimo_gerado_em, created_at,
         grupo:grupos(id, name),
         criador:profiles!criado_por(id, name)
       `)
@@ -24,8 +25,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   if (req.method === 'POST') {
     const {
-      title_template, conteudo, grupo_id, bairro_ids,
-      recorrencia, dias_semana, dia_mes, horas_validacao, criado_por,
+      title_template, conteudo, grupo_id, bairro_ids, canais_envio,
+      recorrencia, dias_semana, dia_mes, horas_validacao, hora_envio, criado_por,
     } = req.body
 
     if (!title_template) return res.status(400).json({ error: 'title_template é obrigatório' })
@@ -35,15 +36,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('boletim_templates')
       .insert({
         title_template,
-        conteudo:       conteudo       || null,
-        grupo_id:       grupo_id       || null,
-        bairro_ids:     Array.isArray(bairro_ids) ? bairro_ids : [],
+        conteudo:        conteudo        || null,
+        grupo_id:        grupo_id        || null,
+        bairro_ids:      Array.isArray(bairro_ids)   ? bairro_ids   : [],
+        canais_envio:    Array.isArray(canais_envio) ? canais_envio : [],
         recorrencia,
-        dias_semana:    Array.isArray(dias_semana) ? dias_semana : [],
-        dia_mes:        dia_mes        || null,
+        dias_semana:     Array.isArray(dias_semana)  ? dias_semana  : [],
+        dia_mes:         dia_mes         || null,
         horas_validacao: horas_validacao ?? 8,
-        criado_por:     criado_por     || null,
-        ativo:          true,
+        hora_envio:      hora_envio      || '09:00',
+        criado_por:      criado_por      || null,
+        ativo:           true,
       })
       .select()
       .single()

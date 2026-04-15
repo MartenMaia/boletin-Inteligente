@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === 'GET') {
     const { data, error } = await supabase
       .from('grupo_membros')
-      .select('id, cliente_id, name, contact, bairro:bairros(id, name), created_at')
+      .select('id, cliente_id, name, contact, email, bairro:bairros(id, name), created_at')
       .eq('grupo_id', grupoId)
       .order('name')
 
@@ -21,13 +21,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === 'POST') {
-    const { cliente_id, name, contact, bairro_id } = req.body
+    const { cliente_id, name, contact, email, bairro_id } = req.body
 
     // Link an existing cliente by ID
     if (cliente_id) {
       const { data: cliente, error: clienteErr } = await supabase
         .from('clientes')
-        .select('name, phone, bairro_id')
+        .select('name, phone, email, bairro_id')
         .eq('id', cliente_id)
         .single()
 
@@ -40,6 +40,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           cliente_id,
           name: cliente.name,
           contact: cliente.phone || null,
+          email: (cliente as any).email || null,
           bairro_id: cliente.bairro_id || null,
         })
         .select()
@@ -57,7 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { data, error } = await supabase
       .from('grupo_membros')
-      .insert({ grupo_id: grupoId, name, contact: contact || null, bairro_id: bairro_id || null })
+      .insert({ grupo_id: grupoId, name, contact: contact || null, email: email || null, bairro_id: bairro_id || null })
       .select()
       .single()
 

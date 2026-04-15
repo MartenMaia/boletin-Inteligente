@@ -8,7 +8,7 @@ export interface Database {
           id: string
           name: string | null
           email: string | null
-          role: 'admin' | 'editor' | 'aprovador' | 'viewer'
+          role: 'admin' | 'aprovador' | 'suporte' | 'viewer'
           avatar_url: string | null
           created_at: string
           updated_at: string
@@ -17,7 +17,7 @@ export interface Database {
           id: string
           name?: string | null
           email?: string | null
-          role?: 'admin' | 'editor' | 'aprovador' | 'viewer'
+          role?: 'admin' | 'aprovador' | 'suporte' | 'viewer'
           avatar_url?: string | null
           created_at?: string
           updated_at?: string
@@ -25,7 +25,7 @@ export interface Database {
         Update: {
           name?: string | null
           email?: string | null
-          role?: 'admin' | 'editor' | 'aprovador' | 'viewer'
+          role?: 'admin' | 'aprovador' | 'suporte' | 'viewer'
           avatar_url?: string | null
           updated_at?: string
         }
@@ -62,14 +62,14 @@ export interface Database {
       grupo_membros: {
         Row: {
           id: string; grupo_id: string; cliente_id: string | null
-          name: string; contact: string | null; bairro_id: string | null; created_at: string
+          name: string; contact: string | null; email: string | null; bairro_id: string | null; created_at: string
         }
         Insert: {
           id?: string; grupo_id: string; cliente_id?: string | null
-          name: string; contact?: string | null; bairro_id?: string | null; created_at?: string
+          name: string; contact?: string | null; email?: string | null; bairro_id?: string | null; created_at?: string
         }
         Update: {
-          name?: string; contact?: string | null; bairro_id?: string | null
+          name?: string; contact?: string | null; email?: string | null; bairro_id?: string | null
         }
       }
       avisos: {

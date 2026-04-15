@@ -15,8 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select(`
         id, title, conteudo, status, created_at, updated_at,
         proximo_envio, data_envio, data_aprovacao,
+        canais_envio, bairro_ids, grupo_id,
         bairro:bairros(id, name),
-        grupo:grupos(id, name),
+        grupo:grupos(id, name, members:grupo_membros(id, name, contact, email)),
         criador:profiles!criado_por(id, name),
         aprovador:profiles!aprovado_por(id, name)
       `)

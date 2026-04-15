@@ -15,6 +15,10 @@ export default function AdminLogin() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // Mensagem para usuário inativo redirecionado pelo useAuth
+  const motivo = router.query.motivo
+  const avisoInativo = motivo === 'inativo'
+
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
     setError('')
@@ -86,6 +90,11 @@ export default function AdminLogin() {
                 Acesse o painel de administração
               </Typography>
 
+              {avisoInativo && (
+                <Alert severity="warning" sx={{ mb: 2 }}>
+                  Seu acesso foi desativado. Entre em contato com o administrador.
+                </Alert>
+              )}
               {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
               <Box component="form" noValidate onSubmit={handleSubmit}>
@@ -139,12 +148,12 @@ export default function AdminLogin() {
                 {/* Usuários de teste */}
                 <Box sx={{ mt: 3, p: 2, bgcolor: 'action.hover', borderRadius: 2 }}>
                   <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
-                    <strong>Usuários de teste</strong> (senha: Boletim@2026)
+                    <strong>Usuários de teste</strong> — Admin/Aprovador/Viewer: Boletim@2026 · Suporte: Suporte@2026!
                   </Typography>
                   {[
                     { label: 'Admin', email: 'admin@boletim.com' },
-                    { label: 'Editor', email: 'editor@boletim.com' },
                     { label: 'Aprovador', email: 'aprovador@boletim.com' },
+                    { label: 'Suporte', email: 'suporte@boletim.com' },
                     { label: 'Viewer', email: 'viewer@boletim.com' },
                   ].map((u) => (
                     <Button

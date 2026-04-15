@@ -17,6 +17,9 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime'
 import AdminLayout    from '../../components/AdminLayout'
 import { useAuth }    from '../../hooks/useAuth'
 
+import EmailIcon    from '@mui/icons-material/Email'
+import WhatsAppIcon from '@mui/icons-material/WhatsApp'
+
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
 const DIAS_SEMANA = [
@@ -107,18 +110,31 @@ const EMPTY_FORM = {
   conteudo:       '',
   grupo_id:       '',
   bairro_ids:     [] as string[],
+  canais_envio:   [] as string[],
   recorrencia:    'diaria' as string,
   dias_semana:    [] as number[],
   dia_mes:        1,
   horas_validacao:8,
+  hora_envio:     '09:00',
   ativo:          true,
 }
 
 export default function Recorrencia() {
   const { profile } = useAuth()
   const { data: templates, isLoading } = useSWR('/api/templates', fetcher)
-  const { data: grupos }   = useSWR('/api/groups',  fetcher)
-  const { data: bairros }  = useSWR('/api/bairros', fetcher)
+  const { data: grupos }        = useSWR('/api/groups',      fetcher)
+  const { data: bairros }       = useSWR('/api/bairros',     fetcher)
+  const { data: canaisConfig }  = useSWR('/api/envio/config', fetcher)
+
+  const canaisAtivos: Array<{ canal: string; label: string; icon: React.ReactNode; color: string }> =
+    (canaisConfig || [])
+      .filter((c: any) => c.ativo)
+      .map((c: any) => ({
+        canal: c.canal,
+        label: c.canal === 'email' ? 'E-mail' : 'WhatsApp',
+        icon:  c.canal === 'email' ? <EmailIcon fontSize="small" /> : <WhatsAppIcon fontSize="small" />,
+        color: c.canal === 'email' ? '#0077B6' : '#25D366',
+      }))
 
   const [modal, setModal]     = useState(false)
   const [editing, setEditing] = useState<any>(null)
@@ -151,10 +167,12 @@ export default function Recorrencia() {
       conteudo:        t.conteudo  || '',
       grupo_id:        t.grupo?.id || '',
       bairro_ids:      t.bairro_ids || [],
+      canais_envio:    t.canais_envio || [],
       recorrencia:     t.recorrencia,
       dias_semana:     t.dias_semana || [],
       dia_mes:         t.dia_mes ?? 1,
       horas_validacao: t.horas_validacao ?? 8,
+      hora_envio:      t.hora_envio ?? '09:00',
       ativo:           t.ativo ?? true,
     })
     setModal(true)
@@ -167,6 +185,8 @@ export default function Recorrencia() {
       return showSnack('Selecione o dia da semana', 'error')
     if (form.recorrencia === 'customizada' && form.dias_semana.length === 0)
       return showSnack('Selecione pelo menos um dia', 'error')
+    if (canaisAtivos.length > 0 && form.canais_envio.length === 0)
+      return showSnack('Selecione pelo menos um canal de envio', 'error')
 
     setSaving(true)
     try {
@@ -174,8 +194,9 @@ export default function Recorrencia() {
       const method = editing ? 'PATCH' : 'POST'
       const body   = {
         ...form,
-        grupo_id:   form.grupo_id || null,
-        criado_por: profile?.id  || null,
+        grupo_id:    form.grupo_id || null,
+        canais_envio: form.canais_envio,
+        criado_por:  profile?.id  || null,
       }
       const res = await fetch(url, {
         method,
@@ -344,6 +365,11 @@ export default function Recorrencia() {
                         <Typography variant="body2" color={t.ativo ? 'text.primary' : 'text.disabled'}>
                           {t.ativo ? proximaGeracao(t) : '—'}
                         </Typography>
+                        {t.hora_envio && t.ativo && (
+                          <Typography variant="caption" color="text.secondary">
+                            às {t.hora_envio}
+                          </Typography>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -510,8 +536,18 @@ export default function Recorrencia() {
               </Box>
             )}
 
-            {/* Horas de validação */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* Horário de envio + Horas de validação */}
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+              <TextField
+                label="Horário de envio"
+                type="time"
+                value={form.hora_envio}
+                onChange={e => patchForm('hora_envio', e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ step: 300 }}
+                sx={{ width: 160 }}
+                helperText="Hora de geração do boletim"
+              />
               <TextField
                 label="Prazo de validação"
                 type="number"
@@ -529,7 +565,54 @@ export default function Recorrencia() {
                   <Switch checked={form.ativo} onChange={e => patchForm('ativo', e.target.checked)} />
                 }
                 label="Template ativo"
+                sx={{ mt: 1 }}
               />
+            </Box>
+
+            {/* Canais de envio */}
+            <Box>
+              <Typography variant="subtitle2" fontWeight={600} color="text.secondary" sx={{ mb: 1 }}>
+                CANAIS DE ENVIO *
+              </Typography>
+              {canaisAtivos.length === 0 ? (
+                <Alert severity="info" sx={{ borderRadius: 2, fontSize: '0.85rem' }}>
+                  Nenhum canal ativo. Configure em <strong>Configurações → Envio</strong>.
+                </Alert>
+              ) : (
+                <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
+                  {canaisAtivos.map(({ canal, label, icon, color }) => {
+                    const selected = form.canais_envio.includes(canal)
+                    return (
+                      <Chip
+                        key={canal}
+                        icon={<Box sx={{ color: selected ? 'white' : color, display: 'flex' }}>{icon}</Box>}
+                        label={label}
+                        onClick={() => {
+                          patchForm('canais_envio', selected
+                            ? form.canais_envio.filter((c: string) => c !== canal)
+                            : [...form.canais_envio, canal])
+                        }}
+                        variant={selected ? 'filled' : 'outlined'}
+                        sx={{
+                          fontWeight: selected ? 700 : 400,
+                          fontSize: '0.85rem',
+                          height: 36,
+                          px: 0.5,
+                          bgcolor: selected ? color : 'transparent',
+                          color: selected ? 'white' : 'text.primary',
+                          borderColor: color,
+                          '&:hover': { bgcolor: selected ? color : `${color}18` },
+                        }}
+                      />
+                    )
+                  })}
+                  {form.canais_envio.length === 0 && (
+                    <FormHelperText error sx={{ ml: 0 }}>
+                      Selecione pelo menos um canal
+                    </FormHelperText>
+                  )}
+                </Box>
+              )}
             </Box>
 
             {/* Conteúdo base */}
@@ -537,7 +620,7 @@ export default function Recorrencia() {
               label="Conteúdo base" fullWidth multiline minRows={5}
               value={form.conteudo} onChange={e => patchForm('conteudo', e.target.value)}
               placeholder={`Conteúdo padrão do boletim gerado...\n\nExemplo:\n📍 BOLETIM DIÁRIO — {data}\n\n🚨 Segurança: ...\n🌊 Balneabilidade: ...\n🚦 Trânsito: ...`}
-              helperText="Conteúdo inicial do boletim. O editor poderá complementar antes de aprovar."
+              helperText="Conteúdo inicial do boletim. O aprovador poderá complementar antes de aprovar."
               sx={{ '& .MuiInputBase-root': { fontFamily: 'monospace', fontSize: '0.875rem' } }}
             />
           </Box>

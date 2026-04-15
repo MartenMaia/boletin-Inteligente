@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('grupos')
       .select(`
         id, name, description, created_at, updated_at,
-        members:grupo_membros(id, cliente_id, name, contact, bairro_id)
+        members:grupo_membros(id, cliente_id, name, contact, email, bairro_id)
       `)
       .eq('id', id)
       .single()
