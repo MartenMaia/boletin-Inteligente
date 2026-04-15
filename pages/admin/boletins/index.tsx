@@ -167,6 +167,7 @@ export default function BoletinsList() {
             <TextField
               select size="small" value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
+              SelectProps={{ displayEmpty: true }}
               sx={{ width: 190 }}
             >
               {STATUS_OPTIONS.map((o) => <MenuItem key={o.value} value={o.value}>{o.label}</MenuItem>)}

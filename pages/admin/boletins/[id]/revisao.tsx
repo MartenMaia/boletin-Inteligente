@@ -269,7 +269,7 @@ export default function Revisao() {
                     return (
                       <Chip
                         key={canal}
-                        icon={<Box sx={{ color: selected ? 'white' : color, display: 'flex' }}>{icon}</Box>}
+                        icon={<Box sx={{ display: 'flex' }}>{icon}</Box>}
                         label={label}
                         onClick={isEditable ? () => setCanaisEnvio(prev =>
                           prev.includes(canal) ? prev.filter(c => c !== canal) : [...prev, canal]
@@ -284,6 +284,7 @@ export default function Revisao() {
                           color: selected ? 'white' : 'text.primary',
                           borderColor: color,
                           cursor: isEditable ? 'pointer' : 'default',
+                          '& .MuiChip-icon': { color: selected ? 'white' : color },
                           '&:hover': isEditable ? { bgcolor: selected ? color : `${color}18` } : {},
                         }}
                       />

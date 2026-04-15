@@ -585,7 +585,7 @@ export default function Recorrencia() {
                     return (
                       <Chip
                         key={canal}
-                        icon={<Box sx={{ color: selected ? 'white' : color, display: 'flex' }}>{icon}</Box>}
+                        icon={<Box sx={{ display: 'flex' }}>{icon}</Box>}
                         label={label}
                         onClick={() => {
                           patchForm('canais_envio', selected
@@ -601,6 +601,7 @@ export default function Recorrencia() {
                           bgcolor: selected ? color : 'transparent',
                           color: selected ? 'white' : 'text.primary',
                           borderColor: color,
+                          '& .MuiChip-icon': { color: selected ? 'white' : color },
                           '&:hover': { bgcolor: selected ? color : `${color}18` },
                         }}
                       />

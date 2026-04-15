@@ -22,13 +22,15 @@ export function useAuth(requireAuth = true) {
       return
     }
 
-    if (data.ativo === false) {
+    const profileData = data as unknown as UserProfile
+
+    if (profileData.ativo === false) {
       await supabase.auth.signOut()
       router.push('/admin/login?motivo=inativo')
       return
     }
 
-    setProfile(data as UserProfile)
+    setProfile(profileData)
     setLoading(false)
   }, [])
 
