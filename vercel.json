@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/gerar-boletins",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/sync-balneabilidade",
+      "schedule": "0 8 * * *"
     }
   ]
 }
