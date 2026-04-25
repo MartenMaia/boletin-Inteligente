@@ -30,8 +30,8 @@ const NAV_ITEMS_BASE = [
   { label: 'Visão Geral',   icon: <HomeIcon />,           path: '/admin',             roles: null },
   { label: 'Boletins',      icon: <ArticleIcon />,        path: '/admin/boletins',    roles: null },
   { label: 'Recorrência',   icon: <RepeatIcon />,         path: '/admin/recorrencia', roles: null },
-  { label: 'Grupos',        icon: <GroupsIcon />,         path: '/admin/grupos',      roles: null },
-  { label: 'Usuários',      icon: <ManageAccountsIcon />, path: '/admin/usuarios',    roles: ['admin', 'suporte'] },
+  { label: 'Grupos',        icon: <GroupsIcon />,         path: '/admin/grupos',    roles: null },
+  { label: 'Usuários',      icon: <ManageAccountsIcon />, path: '/admin/usuarios',  roles: ['admin', 'suporte'] },
   { label: 'Configurações', icon: <SettingsIcon />,       path: '/admin/settings',    roles: ['admin', 'suporte'] },
 ]
 

@@ -15,7 +15,7 @@ import { syncBalneabilidade } from './sync'
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 )
 
 let ultimaSincronizacaoPorBairro: Record<string, Date> = {}
@@ -95,9 +95,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Retorna apenas o status atual (um registro por ponto)
     const { data: pontos } = await supabase
       .from('balneabilidade_pontos')
-      .select('id, nome_ima')
+      .select('id, nome_ima, numero_ponto, descricao')
       .eq('bairro_id', id)
       .eq('ativo', true)
+      .order('nome_ima')
+      .order('numero_ponto')
 
     const pontosComStatus = await Promise.all(
       (pontos ?? []).map(async (ponto) => {
@@ -110,11 +112,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           .single()
 
         return {
-          ponto_id:  ponto.id,
-          nome_ima:  ponto.nome_ima,
-          condicao:  reg?.condicao ?? 'sem_dados',
-          data_coleta: reg?.data_coleta ?? null,
-          ecoli_valor: reg?.ecoli_valor ?? null,
+          ponto_id:     ponto.id,
+          nome_ima:     ponto.nome_ima,
+          numero_ponto: ponto.numero_ponto,
+          descricao:    ponto.descricao,
+          condicao:     reg?.condicao ?? 'sem_dados',
+          data_coleta:  reg?.data_coleta ?? null,
+          ecoli_valor:  reg?.ecoli_valor ?? null,
           sincronizado_em: reg?.sincronizado_em ?? null,
         }
       })

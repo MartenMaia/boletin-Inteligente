@@ -21,7 +21,9 @@ const TIMEOUT_MS = 20_000
 export type CondicaoIMA = 'propria' | 'impropria' | 'indeterminada'
 
 export interface PontoIMA {
-  nomeIma: string           // Nome exato do LOCAL na tabela do IMA
+  nomeIma: string           // Nome exato do LOCAL na tabela do IMA (sem nº do ponto)
+  numeroPonto: number | null // Número do ponto físico (ex: 1, 2, ... 8 em Canasvieiras)
+  descricao: string | null   // Descrição da localização (após o <br> no HTML)
   municipio: string
   condicao: CondicaoIMA
   dataColeta: string | null  // yyyy-MM-dd
@@ -137,6 +139,8 @@ export function parseHtmlTabela(html: string): PontoIMA[] {
 
     pontos.push({
       nomeIma:        nomePraia,
+      numeroPonto:    numeroPonto,
+      descricao:      descricao,
       municipio:      '',
       condicao,
       dataColeta:     dataTx ? normalizarData(dataTx) : null,

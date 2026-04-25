@@ -18,7 +18,7 @@ import {
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL ?? '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 )
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -66,15 +66,11 @@ export async function syncBalneabilidade() {
       return { sucesso: false, erro, totalIMA: 0, totalSalvos: 0, metodo }
     }
 
-    // 2. Carrega bairros e pontos cadastrados no banco
+    // 2. Carrega bairros
     const { data: bairros } = await supabase.from('bairros').select('id, name')
-    const { data: pontosCadastrados } = await supabase
-      .from('balneabilidade_pontos')
-      .select('id, nome_ima, bairro_id')
-      .eq('ativo', true)
 
-    if (!bairros || !pontosCadastrados) {
-      throw new Error('Não foi possível carregar bairros/pontos do banco')
+    if (!bairros) {
+      throw new Error('Não foi possível carregar bairros do banco')
     }
 
     // 3. Para cada bairro, filtra pontos e persiste registros
@@ -89,25 +85,41 @@ export async function syncBalneabilidade() {
         continue
       }
 
-      // Upsert de pontos desconhecidos
-      await upsertPontosNovos(pontosFiltrados, bairro.id, pontosCadastrados)
+      // Upsert de cada ponto físico individual por (nome_ima, numero_ponto)
+      const upsertData = pontosFiltrados.map((p) => ({
+        bairro_id:    bairro.id,
+        nome_ima:     p.nomeIma,
+        numero_ponto: p.numeroPonto ?? 0,
+        descricao:    p.descricao ?? null,
+        municipio:    p.municipio || 'Florianópolis',
+        ativo:        true,
+      }))
 
-      // Reload pontos após possíveis upserts
+      await supabase.from('balneabilidade_pontos').upsert(
+        upsertData,
+        { onConflict: 'nome_ima,numero_ponto', ignoreDuplicates: false }
+      )
+
+      // Reload pontos após upsert
       const { data: pontosAtualizados } = await supabase
         .from('balneabilidade_pontos')
-        .select('id, nome_ima, bairro_id')
+        .select('id, nome_ima, numero_ponto')
         .eq('bairro_id', bairro.id)
         .eq('ativo', true)
 
-      // Insere registros de balneabilidade
+      // Insere um registro por ponto físico individual
       let pontosSalvos = 0
       for (const ponto of pontosFiltrados) {
+        const numPonto = ponto.numeroPonto ?? 0
         const pontoCadastrado = (pontosAtualizados ?? []).find(
-          (pc) => pc.nome_ima.toLowerCase() === ponto.nomeIma.toLowerCase()
+          (pc) =>
+            pc.nome_ima.toLowerCase() === ponto.nomeIma.toLowerCase() &&
+            pc.numero_ponto === numPonto
         )
         if (!pontoCadastrado) continue
 
-        const { error: insErr } = await supabase.from('balneabilidade_registros').insert({
+        // Upsert: se já existe registro para (ponto_id, data_coleta), atualiza em vez de duplicar
+        const { error: insErr } = await supabase.from('balneabilidade_registros').upsert({
           ponto_id:          pontoCadastrado.id,
           bairro_id:         bairro.id,
           condicao:          ponto.condicao,
@@ -119,7 +131,7 @@ export async function syncBalneabilidade() {
           fonte:             'ima_sc',
           raw_data:          ponto.rawData,
           sincronizado_em:   new Date().toISOString(),
-        })
+        }, { onConflict: 'ponto_id,data_coleta' })
 
         if (!insErr) pontosSalvos++
       }
@@ -145,28 +157,6 @@ export async function syncBalneabilidade() {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** Faz upsert de pontos que ainda não estão cadastrados no banco */
-async function upsertPontosNovos(
-  pontos: PontoIMA[],
-  bairroId: string,
-  pontosCadastrados: Array<{ nome_ima: string }>
-) {
-  const nomesCadastrados = new Set(pontosCadastrados.map((p) => p.nome_ima.toLowerCase()))
-  const novos = pontos.filter((p) => !nomesCadastrados.has(p.nomeIma.toLowerCase()))
-
-  if (novos.length === 0) return
-
-  await supabase.from('balneabilidade_pontos').upsert(
-    novos.map((p) => ({
-      bairro_id:  bairroId,
-      nome_ima:   p.nomeIma,
-      municipio:  p.municipio || 'Florianópolis',
-      ativo:      true,
-    })),
-    { onConflict: 'nome_ima', ignoreDuplicates: true }
-  )
-}
 
 async function atualizarLog(
   id: string | undefined,

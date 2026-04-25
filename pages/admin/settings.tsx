@@ -20,6 +20,7 @@ import CheckCircleIcon   from '@mui/icons-material/CheckCircle'
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked'
 import AdminLayout from '../../components/AdminLayout'
 import { useAuth }  from '../../hooks/useAuth'
+import { BalneabilidadeTabContent } from '../../components/BalneabilidadeTabContent'
 
 const fetcher = (url: string) => fetch(url).then(r => r.json())
 
@@ -683,7 +684,7 @@ export default function Settings() {
                 </Grid>
               </Grid>
             )}
-            {tab === 1 && <ComingSoon label="Balneabilidade" />}
+            {tab === 1 && <BalneabilidadeTabContent filtroBairro={bairro} />}
             {tab === 2 && <ComingSoon label="Segurança" />}
             {tab === 3 && <ComingSoon label="Movimentação" />}
             {tab === envioTabIndex && envioTabIndex >= 0 && <TabEnvio profile={profile} />}

@@ -89,50 +89,47 @@ async function main() {
       continue
     }
 
-    // Upsert de pontos ainda não cadastrados
-    const nomesCad = new Set(pontosCad.filter(p => p.bairro_id === bairro.id).map(p => p.nome_ima.toLowerCase()))
-    const novos = pontosFiltrados.filter(p => !nomesCad.has(p.nomeIma.toLowerCase()))
-    if (novos.length > 0) {
-      await supabase.from('balneabilidade_pontos').upsert(
-        novos.map(p => ({ bairro_id: bairro.id, nome_ima: p.nomeIma, municipio: 'Florianópolis', ativo: true })),
-        { onConflict: 'nome_ima', ignoreDuplicates: true }
-      )
-      console.log(`  ➕ ${novos.length} ponto(s) novo(s) cadastrado(s) para ${bairro.name}`)
-    }
+    // Upsert de cada ponto físico individual por (nome_ima, numero_ponto)
+    const upsertData = pontosFiltrados.map(p => ({
+      bairro_id:    bairro.id,
+      nome_ima:     p.nomeIma,
+      numero_ponto: p.numeroPonto ?? 0,
+      descricao:    p.descricao ?? null,
+      municipio:    'Florianópolis',
+      ativo:        true,
+    }))
+
+    const { error: upsErr } = await supabase.from('balneabilidade_pontos').upsert(
+      upsertData,
+      { onConflict: 'nome_ima,numero_ponto', ignoreDuplicates: false }
+    )
+    if (upsErr) console.warn(`  ⚠️  Upsert pontos:`, upsErr.message)
 
     // Reload pontos após upsert
     const { data: pontosAtt } = await supabase
-      .from('balneabilidade_pontos').select('id, nome_ima')
+      .from('balneabilidade_pontos').select('id, nome_ima, numero_ponto')
       .eq('bairro_id', bairro.id).eq('ativo', true)
 
-    // Insere registros
+    // Insere um registro por ponto físico individual
     let salvos = 0
-    const registros: Record<string, PontoIMA[]> = {}
-
-    // Agrupa por nome (pode haver múltiplos pontos da mesma praia)
-    for (const ponto of pontosFiltrados) {
-      if (!registros[ponto.nomeIma]) registros[ponto.nomeIma] = []
-      registros[ponto.nomeIma].push(ponto)
-    }
-
-    for (const [nomeIma, pts] of Object.entries(registros)) {
-      const pontoCad = (pontosAtt ?? []).find(p => p.nome_ima.toLowerCase() === nomeIma.toLowerCase())
+    for (const pt of pontosFiltrados) {
+      const numPonto = pt.numeroPonto ?? 0
+      const pontoCad = (pontosAtt ?? []).find(
+        p => p.nome_ima.toLowerCase() === pt.nomeIma.toLowerCase() && p.numero_ponto === numPonto
+      )
       if (!pontoCad) continue
 
-      // Insere um registro por ponto individual (raw_data tem o número do ponto)
-      for (const pt of pts) {
-        const { error: insErr } = await supabase.from('balneabilidade_registros').insert({
-          ponto_id:        pontoCad.id,
-          bairro_id:       bairro.id,
-          condicao:        pt.condicao,
-          data_coleta:     pt.dataColeta,
-          fonte:           'ima_sc',
-          raw_data:        pt.rawData,
-          sincronizado_em: agora,
-        })
-        if (!insErr) salvos++
-        else console.warn(`    ⚠️  Erro ao inserir ponto:`, insErr.message)
-      }
+      const { error: insErr } = await supabase.from('balneabilidade_registros').insert({
+        ponto_id:        pontoCad.id,
+        bairro_id:       bairro.id,
+        condicao:        pt.condicao,
+        data_coleta:     pt.dataColeta,
+        fonte:           'ima_sc',
+        raw_data:        pt.rawData,
+        sincronizado_em: agora,
+      })
+      if (!insErr) salvos++
+      else console.warn(`    ⚠️  Erro ao inserir ponto ${pt.nomeIma} #${numPonto}:`, insErr.message)
     }
 
     totalSalvos += salvos
